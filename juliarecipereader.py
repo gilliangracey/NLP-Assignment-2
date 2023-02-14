@@ -84,7 +84,7 @@ def ingredient_info(ingredients):
         prep_before = False
         prep = ''
         while i < len(split_str):
-            if split_str[i] == 'of' or split_str[i] == 'or':
+            if split_str[i] == 'of':# or split_str[i] == 'or':
                 i = i + 1
             elif looking_for_prep:
                 if prep == '':
@@ -103,12 +103,13 @@ def ingredient_info(ingredients):
                     ingredient = ingredient + ' ' + split_str[i][0:len(split_str[i])-1]
                 i = i + 1
                 looking_for_prep = True
-            elif split_str[i][len(split_str[i])-2:len(split_str[i])] == 'ed' and nlp(split_str[i])[0].pos_ == 'VERB':
+            #elif split_str[i][len(split_str[i])-2:len(split_str[i])] == 'ed' and (nlp(split_str[i])[0].pos_ == 'VBN' or nlp(split_str[i])[0].pos_ == 'VBD'): # or just VERB
+            elif nlp(split_str[i])[0].tag_ == 'VBN' or nlp(split_str[i])[0].tag_ == 'VBD': # or just VERB
                 if prep_before:
                     prep = prep + ', ' + split_str[i]
                 else:
                     prep = split_str[i]
-                prep_before = True
+                    prep_before = True
                 i = i + 1
             else:
                 if ingredient == '':
@@ -118,6 +119,20 @@ def ingredient_info(ingredients):
                 i = i + 1
         ingredient_dict[ingredient] = [quant, unit, prep]
     return ingredient_dict
+
+def plural(ingredient):
+    if len(ingredient.split()) == 0:
+        if nlp(ingredient)[0].tag_ == 'NN': # singular
+            return ingredient+'s'
+        elif nlp(ingredient)[0].tag_ == 'NNS' or ingredient[len(ingredient)-1] == 's': # plural
+            return ingredient[0:len(ingredient)-1]  
+    else:      
+        lastword = ingredient.split()[len(ingredient.split())-1]
+        if nlp(lastword)[0].tag_ == 'NN': # singular
+            return ingredient+'s'
+        elif nlp(lastword)[0].tag_ == 'NNS' or lastword[len(lastword)-1] == 's': # plural
+            return ingredient[0:len(ingredient)-1]
+    return ingredient
 
 def ingredient_questions(question):
     question = question.lower()
@@ -135,62 +150,104 @@ def ingredient_questions(question):
     elif question.__contains__("how many"):
         quant = True
         kw = "how many"
+    elif question.__contains__("prep"):
+        kw = "prep"
     if quant:
         for ingredient in ingredient_dict:
-            if question.__contains__(ingredient) or question.__contains__(ingredient + 's') or (question.__contains__(ingredient[0:len(ingredient)-1]) and ingredient[len(ingredient) == 's']):
+            if question.__contains__(ingredient) or question.__contains__(plural(ingredient)):
                 lst = ingredient_dict[ingredient]
-                response = lst[0] + ' ' + lst[1]
-                return response
+                t1 = ' '
+                t2 = ' of '
+                if lst[1] == '':
+                    t1 = ''
+                    t2 = ' '
+                print("You need " + lst[0] + t1 + lst[1] + t2 + ingredient)
+                return
+                '''
+                if kw == "how many":
+                    if lst[1] == '':
+                        print("You need " + lst[0] + ' ' + ingredient)
+                        return
+                elif kw == "how much":
+                    if lst[1] != '':
+                        print("You need " + lst[0] + ' ' + lst[1] + ' of ' + ingredient)
+                        return
+                '''
         for ingredient in ingredient_dict:
-            if len(ingredient.split()) == 2:
-                if question.__contains__(ingredient.split()[0]) and nlp(ingredient.split()[0])[0].pos_ == 'NOUN':
+            if len(ingredient.split()) > 1:
+                for element in ingredient.split():
+                    if question.__contains__(element) and nlp(element)[0].pos_ == 'NOUN':
                     # if word is in multiple ingredients, see what matches (aka if question is "how many", unit should be '')
+                        lst = ingredient_dict[ingredient]
+                        t1 = ' '
+                        t2 = ' of '
+                        if lst[1] == '':
+                            t1 = ''
+                            t2 = ' '
+                        print("You need " + lst[0] + t1 + lst[1] + t2 + ingredient)
+                        return
+                        '''
+                        if kw == "how many":
+                            if lst[1] == '':
+                                print("You need " + lst[0] + ' ' + ingredient)
+                                return
+                        elif kw == "how much":
+                            if lst[1] != '':
+                                print("You need " + lst[0] + ' ' + lst[1] + ' of ' + ingredient)
+                                return
+                        '''
+                if question.__contains__(plural(ingredient.split()[len(ingredient.split())-1])):
                     lst = ingredient_dict[ingredient]
+                    t1 = ' '
+                    t2 = ' of '
+                    if lst[1] == '':
+                        t1 = ''
+                        t2 = ' '
+                    print("You need " + lst[0] + t1 + lst[1] + t2 + ingredient)
+                    return
+                    '''
                     if kw == "how many":
                         if lst[1] == '':
-                            response = lst[0] + ' ' + lst[1]
+                            print("You need " + lst[0] + ' ' + ingredient)
+                            return
                     elif kw == "how much":
                         if lst[1] != '':
-                            response = lst[0] + ' ' + lst[1]
-                    return response  
-                if question.__contains__(ingredient.split()[1]) and nlp(ingredient.split()[1])[0].pos_ == 'NOUN':
-                    lst = ingredient_dict[ingredient]
-                    if kw == "how many":
-                        if lst[1] == '':
-                            response = lst[0] + ' ' + lst[1]
-                    elif kw == "how much":
-                        if lst[1] != '':
-                            response = lst[0] + ' ' + lst[1]
-                    return response
-    if question.__contains__("prep"):
+                            print("You need " + lst[0] + ' ' + lst[1] + ' of ' + ingredient)
+                            return         
+                    '''       
+    if kw == "prep":
         for ingredient in ingredient_dict:
-            if question.__contains__(ingredient) or question.__contains__(ingredient + 's') or (question.__contains__(ingredient[0:len(ingredient-1)]) and ingredient[len(ingredient) == 's']):
+            if question.__contains__(ingredient) or question.__contains__(plural(ingredient)):
                 lst = ingredient_dict[ingredient]
-                response = lst[3]
-                return response
-        for ingredient in ingredient_dict:
-            if len(ingredient.split()) == 2:
-                if question.__contains__(ingredient.split()[0]) and nlp(ingredient.split()[0])[0].pos_ == 'NOUN':
-                    # if word is in multiple ingredients, see what matches (aka if question is "how many", unit should be '')
+                print("You should " + lst[2][0:len(lst[2])-2] + ' the ' + ingredient)
+                return
+        for ingredient in ingredient_dict: # see what happens in for loops are combined
+            if len(ingredient.split()) > 1:
+                for element in ingredient.split():
+                    if question.__contains__(element) and nlp(element)[0].pos_ == 'NOUN': # permit VERB too
+                    # if word is in multiple ingredients, see what matches
                     # look for ingredient in steps
+                        lst = ingredient_dict[ingredient]
+                        print("You should " + lst[2][0:len(lst[2])-2] + ' the ' + ingredient)
+                        return
+                if question.__contains__(plural(ingredient.split()[len(ingredient.split())-1])):
                     lst = ingredient_dict[ingredient]
-                    response = lst[3]
-                    return response  
-                if question.__contains__(ingredient.split()[1]) and nlp(ingredient.split()[1])[0].pos_ == 'NOUN': # check if noun
-                    lst = ingredient_dict[ingredient]
-                    response = lst[3]
-                    return response
+                    print("You should " + lst[2][0:len(lst[2])-2] + ' the ' + ingredient)
     if kw == "factor":
         find_ingr = []
         for ingredient in ingredient_dict:
-            if question.__contains__(ingredient) or question.__contains__(ingredient + 's') or (question.__contains__(ingredient[0:len(ingredient)-1]) and ingredient[len(ingredient) == 's']):
+            if question.__contains__(ingredient) or question.__contains__(plural(ingredient)):
                 find_ingr.append(ingredient)
-            elif len(ingredient.split()) == 2:
-                if question.__contains__(ingredient.split()[0]) and nlp(ingredient.split()[0])[0].pos_ == 'NOUN':
+            elif len(ingredient.split()) > 1:
+                found = 0
+                for element in ingredient.split():
+                    if question.__contains__(element) and nlp(element)[0].pos_ == 'NOUN':
                     # if word is in multiple ingredients, see what matches (aka if question is "how many", unit should be '')
                     # look for ingredient in steps
-                    find_ingr.append(ingredient)
-                elif question.__contains__(ingredient.split()[1]) and nlp(ingredient.split()[1])[0].pos_ == 'NOUN': # check if noun
+                        find_ingr.append(ingredient)
+                        found = 1
+                        break
+                if not found and question.__contains__(plural(ingredient.split()[len(ingredient.split())-1])):
                     find_ingr.append(ingredient)
         if len(find_ingr) == 0:
             response = []
@@ -203,13 +260,19 @@ def ingredient_questions(question):
                 t2 = ' '
                 t3 = ', '
                 if unit == '':
-                    t2 = ''
+                    t1 = ''
+                    if quantity != '1' and nlp(ingredient[len(ingredient)-1])[0].tag_ == 'NN':#ingredient[len(ingredient)-1] != 's':
+                        ingredient = ingredient + 's'
+                else:
+                    if quantity != '1' and nlp(unit)[0].tag_ == 'NN':#unit[len(unit)-1] != 's':
+                        unit = unit + 's'
                 if prep == '':
                     t3 = ''
                 curr_response = quantity + t1 + unit + t2 + ingredient + t3 + prep
                 response.append(curr_response)
             for a_response in response:
-                print(a_response,'\n')
+                print(a_response)
+            return
         else:
             response = []
             for ingredient in find_ingr:
@@ -220,12 +283,13 @@ def ingredient_questions(question):
                 t2 = ' '
                 if unit == '':
                     t1 = ''
-                    if quantity != '1' and ingredient[len(ingredient)-1] != 's':
+                    if quantity != '1' and nlp(ingredient[len(ingredient)-1])[0].tag_ == 'NN':#ingredient[len(ingredient)-1] != 's':
                         ingredient = ingredient + 's'
                 else:
-                    if quantity != '1' and unit[len(unit)-1] != 's':
+                    if quantity != '1' and nlp(unit)[0].tag_ == 'NN':#unit[len(unit)-1] != 's':
                         unit = unit + 's'
-                print('You need ' + quantity + t1 + unit + t2 + ingredient,'\n')             
+                print('You need ' + quantity + t1 + unit + t2 + ingredient)     
+            return        
 
 def multiply(num,factor):
     num = num.split()
@@ -288,8 +352,10 @@ def multiply(num,factor):
         return str(sum)
 
 # check if end of str == .0, then convert to int, then str
-#print(multiply("3/3 or ½",2))              
-ingredient_questions("If I double the recipe, how many eggs do I need?")
+#print(multiply("3/3 or ½",2)) 
+#print(nlp("chives")[0].pos_) 
+ingredient_questions("how much chive do i add")
+#print(get_plural(ingredient_info(ingredients)))
 #print(ingredient_info(ingredients))
 # questions
 '''
