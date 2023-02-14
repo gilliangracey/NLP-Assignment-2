@@ -123,21 +123,27 @@ def ingredient_questions(question):
     question = question.lower()
     ingredient_dict = ingredient_info(ingredients)
     quant = False
-    if question.__contains__("how much"):
+    if question.__contains__("double"):
+        kw = "factor"
+        factor = 2
+    elif question.__contains__("triple"):
+        kw = "factor"
+        factor = 3
+    elif question.__contains__("how much"):
         quant = True
         kw = "how much"
-    if question.__contains__("how many"):
+    elif question.__contains__("how many"):
         quant = True
         kw = "how many"
     if quant:
         for ingredient in ingredient_dict:
-            if question.__contains__(ingredient) or question.__contains__(ingredient + 's') or (question.__contains__(ingredient[0:len(ingredient-1)]) and ingredient[len(ingredient) == 's']):
+            if question.__contains__(ingredient) or question.__contains__(ingredient + 's') or (question.__contains__(ingredient[0:len(ingredient)-1]) and ingredient[len(ingredient) == 's']):
                 lst = ingredient_dict[ingredient]
                 response = lst[0] + ' ' + lst[1]
                 return response
         for ingredient in ingredient_dict:
             if len(ingredient.split()) == 2:
-                if question.__contains__(ingredient.split()[0]):
+                if question.__contains__(ingredient.split()[0]) and nlp(ingredient.split()[0])[0].pos_ == 'NOUN':
                     # if word is in multiple ingredients, see what matches (aka if question is "how many", unit should be '')
                     lst = ingredient_dict[ingredient]
                     if kw == "how many":
@@ -147,7 +153,7 @@ def ingredient_questions(question):
                         if lst[1] != '':
                             response = lst[0] + ' ' + lst[1]
                     return response  
-                if question.__contains__(ingredient.split()[1]):
+                if question.__contains__(ingredient.split()[1]) and nlp(ingredient.split()[1])[0].pos_ == 'NOUN':
                     lst = ingredient_dict[ingredient]
                     if kw == "how many":
                         if lst[1] == '':
@@ -164,39 +170,62 @@ def ingredient_questions(question):
                 return response
         for ingredient in ingredient_dict:
             if len(ingredient.split()) == 2:
-                if question.__contains__(ingredient.split()[0]):
+                if question.__contains__(ingredient.split()[0]) and nlp(ingredient.split()[0])[0].pos_ == 'NOUN':
                     # if word is in multiple ingredients, see what matches (aka if question is "how many", unit should be '')
+                    # look for ingredient in steps
                     lst = ingredient_dict[ingredient]
                     response = lst[3]
                     return response  
-                if question.__contains__(ingredient.split()[1]):
+                if question.__contains__(ingredient.split()[1]) and nlp(ingredient.split()[1])[0].pos_ == 'NOUN': # check if noun
                     lst = ingredient_dict[ingredient]
                     response = lst[3]
                     return response
-    elif question.__contains__("double") or question.__contains__("doubled"):
-        kw = "factor"
-        factor = 2
-    elif question.__contains__("triple") or question.__contains__("tripled"):
-        kw = "factor"
-        factor = 3
     if kw == "factor":
         find_ingr = []
         for ingredient in ingredient_dict:
-            if question.__contains__(ingredient):
-                find_ingr = find_ingr.append(ingredient)
+            if question.__contains__(ingredient) or question.__contains__(ingredient + 's') or (question.__contains__(ingredient[0:len(ingredient)-1]) and ingredient[len(ingredient) == 's']):
+                find_ingr.append(ingredient)
+            elif len(ingredient.split()) == 2:
+                if question.__contains__(ingredient.split()[0]) and nlp(ingredient.split()[0])[0].pos_ == 'NOUN':
+                    # if word is in multiple ingredients, see what matches (aka if question is "how many", unit should be '')
+                    # look for ingredient in steps
+                    find_ingr.append(ingredient)
+                elif question.__contains__(ingredient.split()[1]) and nlp(ingredient.split()[1])[0].pos_ == 'NOUN': # check if noun
+                    find_ingr.append(ingredient)
         if len(find_ingr) == 0:
+            response = []
             for ingredient in ingredient_dict:
                 lst = ingredient_dict[ingredient]
                 quantity = multiply(lst[0],factor)
-                # checks for whether anything is empty to ensure structure of sentence is correct
-                print(quantity + lst[1] + ingredient + ', ' + lst[2])
+                unit = lst[1]
+                prep = lst[2]
+                t1 = ' '
+                t2 = ' '
+                t3 = ', '
+                if unit == '':
+                    t2 = ''
+                if prep == '':
+                    t3 = ''
+                curr_response = quantity + t1 + unit + t2 + ingredient + t3 + prep
+                response.append(curr_response)
+            for a_response in response:
+                print(a_response,'\n')
         else:
+            response = []
             for ingredient in find_ingr:
                 lst = ingredient_dict[ingredient]
                 quantity = multiply(lst[0],factor)
-                # checks for whether anything is empty to ensure structure of sentence is correct
-                print(quantity + lst[1] + ingredient + ', ' + lst[2])                
-
+                unit = lst[1]
+                t1 = ' '
+                t2 = ' '
+                if unit == '':
+                    t1 = ''
+                    if quantity != '1' and ingredient[len(ingredient)-1] != 's':
+                        ingredient = ingredient + 's'
+                else:
+                    if quantity != '1' and unit[len(unit)-1] != 's':
+                        unit = unit + 's'
+                print('You need ' + quantity + t1 + unit + t2 + ingredient,'\n')             
 
 def multiply(num,factor):
     num = num.split()
@@ -259,9 +288,8 @@ def multiply(num,factor):
         return str(sum)
 
 # check if end of str == .0, then convert to int, then str
-print(multiply("3/3 or ½",2))              
-#print(ingredient_questions("If I double the recipe, how many eggs do I need?"))
-#def ingredient_parser(question): # if question contains "how many" or "how much"
+#print(multiply("3/3 or ½",2))              
+ingredient_questions("If I double the recipe, how many eggs do I need?")
 #print(ingredient_info(ingredients))
 # questions
 '''
