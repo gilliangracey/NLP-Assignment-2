@@ -156,10 +156,27 @@ def ingredient_questions(question):
                         if lst[1] != '':
                             response = lst[0] + ' ' + lst[1]
                     return response
-    if question.__contains__("double") or question.__contains__("doubled"):
+    if question.__contains__("prep"):
+        for ingredient in ingredient_dict:
+            if question.__contains__(ingredient) or question.__contains__(ingredient + 's') or (question.__contains__(ingredient[0:len(ingredient-1)]) and ingredient[len(ingredient) == 's']):
+                lst = ingredient_dict[ingredient]
+                response = lst[3]
+                return response
+        for ingredient in ingredient_dict:
+            if len(ingredient.split()) == 2:
+                if question.__contains__(ingredient.split()[0]):
+                    # if word is in multiple ingredients, see what matches (aka if question is "how many", unit should be '')
+                    lst = ingredient_dict[ingredient]
+                    response = lst[3]
+                    return response  
+                if question.__contains__(ingredient.split()[1]):
+                    lst = ingredient_dict[ingredient]
+                    response = lst[3]
+                    return response
+    elif question.__contains__("double") or question.__contains__("doubled"):
         kw = "factor"
         factor = 2
-    if question.__contains__("triple") or question.__contains__("tripled"):
+    elif question.__contains__("triple") or question.__contains__("tripled"):
         kw = "factor"
         factor = 3
     if kw == "factor":
@@ -171,6 +188,14 @@ def ingredient_questions(question):
             for ingredient in ingredient_dict:
                 lst = ingredient_dict[ingredient]
                 quantity = multiply(lst[0],factor)
+                # checks for whether anything is empty to ensure structure of sentence is correct
+                print(quantity + lst[1] + ingredient + ', ' + lst[2])
+        else:
+            for ingredient in find_ingr:
+                lst = ingredient_dict[ingredient]
+                quantity = multiply(lst[0],factor)
+                # checks for whether anything is empty to ensure structure of sentence is correct
+                print(quantity + lst[1] + ingredient + ', ' + lst[2])                
 
 
 def multiply(num,factor):
