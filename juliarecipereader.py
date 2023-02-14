@@ -81,35 +81,145 @@ def ingredient_info(ingredients):
             i = i + 1
         ingredient = ''
         looking_for_prep = False
+        prep_before = False
         prep = ''
         while i < len(split_str):
             if split_str[i] == 'of' or split_str[i] == 'or':
                 i = i + 1
             elif looking_for_prep:
                 if prep == '':
-                    prep = prep + split_str[i]
+                    prep = split_str[i]
                 else:
-                    prep = prep + ' ' + split_str[i]
+                    if prep_before:
+                        prep = prep + ', ' + split_str[i]
+                        prep_before = False
+                    else:
+                        prep = prep + ' ' + split_str[i]
                 i = i + 1
             elif split_str[i][len(split_str[i])-1] == ',':
                 if ingredient == '':
-                    ingredient = ingredient + split_str[i][0:len(split_str[i])-1]
+                    ingredient = split_str[i][0:len(split_str[i])-1]
                 else:
                     ingredient = ingredient + ' ' + split_str[i][0:len(split_str[i])-1]
                 i = i + 1
                 looking_for_prep = True
+            elif split_str[i][len(split_str[i])-2:len(split_str[i])] == 'ed' and nlp(split_str[i])[0].pos_ == 'VERB':
+                if prep_before:
+                    prep = prep + ', ' + split_str[i]
+                else:
+                    prep = split_str[i]
+                prep_before = True
+                i = i + 1
             else:
                 if ingredient == '':
-                    ingredient = ingredient + split_str[i]
+                    ingredient = split_str[i]
                 else:
                     ingredient = ingredient + ' ' + split_str[i]
                 i = i + 1
         ingredient_dict[ingredient] = [quant, unit, prep]
     return ingredient_dict
 
-#def ingredient_parser(question): # if question contains "how many" or "how much"
-print(ingredient_info(ingredients))
+def ingredient_questions(question):
+    question = question.lower()
+    ingredient_dict = ingredient_info(ingredients)
+    quant = False
+    if question.__contains__("how much"):
+        quant = True
+        kw = "how much"
+    if question.__contains__("how many"):
+        quant = True
+        kw = "how many"
+    if quant:
+        for ingredient in ingredient_dict:
+            if question.__contains__(ingredient) or question.__contains__(ingredient + 's') or (question.__contains__(ingredient[0:len(ingredient-1)]) and ingredient[len(ingredient) == 's']):
+                lst = ingredient_dict[ingredient]
+                response = lst[0] + ' ' + lst[1]
+                return response
+        for ingredient in ingredient_dict:
+            if len(ingredient.split()) == 2:
+                if question.__contains__(ingredient.split()[0]):
+                    # if word is in multiple ingredients, see what matches (aka if question is "how many", unit should be '')
+                    lst = ingredient_dict[ingredient]
+                    if kw == "how many":
+                        if lst[1] == '':
+                            response = lst[0] + ' ' + lst[1]
+                    elif kw == "how much":
+                        if lst[1] != '':
+                            response = lst[0] + ' ' + lst[1]
+                    return response  
+                if question.__contains__(ingredient.split()[1]):
+                    lst = ingredient_dict[ingredient]
+                    if kw == "how many":
+                        if lst[1] == '':
+                            response = lst[0] + ' ' + lst[1]
+                    elif kw == "how much":
+                        if lst[1] != '':
+                            response = lst[0] + ' ' + lst[1]
+                    return response
+    if question.__contains__("double") or question.__contains__("doubled"):
+        kw = "factor"
+        factor = 2
+    if question.__contains__("triple") or question.__contains__("tripled"):
+        kw = "factor"
+        factor = 3
+    if kw == "factor":
+        find_ingr = []
+        for ingredient in ingredient_dict:
+            if question.__contains__(ingredient):
+                find_ingr = find_ingr.append(ingredient)
+        if len(find_ingr) == 0:
+            for ingredient in ingredient_dict:
+                lst = ingredient_dict[ingredient]
+                quantity = multiply(lst[0],factor)
 
+
+def multiply(num,factor):
+    num = num.split()
+    if num.__contains__('or'):
+        for i in range(len(num)):
+            digit = num[i]
+            if digit != 'or':
+                try:
+                    converted = float(digit)
+                    doubled = converted*factor
+                    num[i] = doubled
+                except:
+                    if digit.__contains__('/'):
+                        middle_index = digit.index('/')
+                        dividend = digit[0:middle_index]
+                        divisor = digit[middle_index+1:len(digit)]
+                        num[i] = factor*dividend/divisor 
+                    else:
+                        num[i] = digit
+        return ' '.join(str(num))
+    sum = 0
+    for digit in num:
+        print(digit)
+        try:
+            converted = float(digit)
+            print(converted)
+            doubled = converted*factor
+            sum = sum + doubled
+        except:
+            if digit.__contains__('/'):
+                middle_index = digit.index('/')
+                dividend = digit[0:middle_index]
+                divisor = digit[middle_index+1:len(digit)]
+                sum = sum + factor*dividend/divisor 
+            else:
+                sum = str(sum) + digit
+    # use int instead of float or cut off ".0"
+    if len(str(sum).split()) > 1:
+        return ' '.join(str(sum))
+    else:
+        return str(sum)
+
+
+
+print(multiply("3",2))              
+#print(ingredient_questions("If I double the recipe, how many eggs do I need?"))
+#def ingredient_parser(question): # if question contains "how many" or "how much"
+#print(ingredient_info(ingredients))
 # questions
 '''
 store quantity as str or number? - make conversion helper function in case people want to double or half recipe
@@ -119,4 +229,5 @@ better way to build ingredients/units/preparation (store them as tuple of curren
     - would still have to check if start index is 0 (like checking if str == '') to know that 1st index should become i
 how to handle "plus more for garnish"? - parse for "plus" but how do we account for this in the quantities
 what if preparation comes before food, like "minced garlic"? does it matter? - check if it's in past tense, check if words end in 'ed' 
+can we ask user clarifying questions? like "which cheese?" 
 '''
