@@ -180,43 +180,61 @@ def multiply(num,factor):
             digit = num[i]
             if digit != 'or':
                 try:
-                    converted = float(digit)
-                    doubled = converted*factor
-                    num[i] = doubled
+                    converted = int(digit)
+                    mult = converted*factor
+                    num[i] = str(mult)
                 except:
-                    if digit.__contains__('/'):
-                        middle_index = digit.index('/')
-                        dividend = digit[0:middle_index]
-                        divisor = digit[middle_index+1:len(digit)]
-                        num[i] = factor*dividend/divisor 
-                    else:
-                        num[i] = digit
-        return ' '.join(str(num))
+                    try:
+                        converted = float(digit)
+                        mult = converted*factor
+                        if str(mult)[len(str(mult))-2:len(str(mult))] == '.0':
+                            num[i] = str(mult)[0:len(str(mult))-2]
+                        else:
+                            num[i] = str(mult)
+                    except:
+                        if digit.__contains__('/'):
+                            middle_index = digit.index('/')
+                            dividend = int(digit[0:middle_index])
+                            divisor = int(digit[middle_index+1:len(digit)])
+                            quotient = factor*dividend/divisor
+                            if str(quotient)[len(str(quotient))-2:len(str(quotient))] == '.0':
+                                num[i] = str(quotient)[0:len(str(quotient))-2]
+                            else:
+                                num[i] = str(quotient)                            
+                        else:
+                            num[i] = digit
+        return ' '.join(num)
     sum = 0
     for digit in num:
-        print(digit)
         try:
-            converted = float(digit)
-            print(converted)
-            doubled = converted*factor
-            sum = sum + doubled
+            converted = int(digit)
+            mult = converted*factor
+            sum = sum + mult
         except:
-            if digit.__contains__('/'):
-                middle_index = digit.index('/')
-                dividend = digit[0:middle_index]
-                divisor = digit[middle_index+1:len(digit)]
-                sum = sum + factor*dividend/divisor 
-            else:
-                sum = str(sum) + digit
-    # use int instead of float or cut off ".0"
+            try:
+                converted = float(digit)
+                mult = converted*factor
+                sum = sum + mult 
+            except:
+                if digit.__contains__('/'):
+                    middle_index = digit.index('/')
+                    dividend = int(digit[0:middle_index])
+                    divisor = int(digit[middle_index+1:len(digit)])
+                    sum = sum + factor*dividend/divisor 
+                else:
+                    if sum == 0:
+                        sum = digit
+                    else:
+                        sum = str(sum) + digit
     if len(str(sum).split()) > 1:
         return ' '.join(str(sum))
     else:
+        if len(str(sum)) > 2 and str(sum)[len(str(sum))-2:len(str(sum))] == '.0':
+            return str(sum)[0:len(str(sum))-2]
         return str(sum)
 
-
-
-print(multiply("3",2))              
+# check if end of str == .0, then convert to int, then str
+print(multiply("3/3 or ½",2))              
 #print(ingredient_questions("If I double the recipe, how many eggs do I need?"))
 #def ingredient_parser(question): # if question contains "how many" or "how much"
 #print(ingredient_info(ingredients))
