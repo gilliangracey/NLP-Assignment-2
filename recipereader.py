@@ -9,7 +9,7 @@ def getdata(url):
     r = requests.get(url) 
     return r.text 
   
-htmldata = getdata('https://www.allrecipes.com/recipe/222589/simple-deviled-eggs/') 
+htmldata = getdata('https://www.allrecipes.com/recipe/216888/good-new-orleans-creole-gumbo/') 
 soup = BeautifulSoup(htmldata, 'html.parser') 
 data = '' 
 
@@ -21,6 +21,22 @@ title = str(title)
 newtitle = ""
 counter=0
 flag = False
+div = soup.find(id="recipe__steps_1-0")
+newdiv = div.find_all("p")
+newsteps = []
+
+for data in newdiv:
+    thetext = data.get_text()
+    newtext = thetext.split('.')
+
+    newtext = thetext.split(".")
+    for element in newtext:
+                if element != "\n":
+                    element = element.strip()
+                    newsteps.append(element)
+
+
+
 
 while counter<len(title):
     if title[counter]=="<":
@@ -42,7 +58,7 @@ print(" ")
 for data in body:
     origstring = data.get_text()
     thestring = origstring[0]
-    if thestring.__contains__("1") or thestring.__contains__("2") or thestring.__contains__("3") or thestring.__contains__("4") or thestring.__contains__("5") or thestring.__contains__("6") or thestring.__contains__("7") or thestring.__contains__("8") or thestring.__contains__("9") or thestring.__contains__("½") or thestring.__contains__("¼"):
+    if thestring.__contains__("1") or thestring.__contains__("2") or thestring.__contains__("3") or thestring.__contains__("4") or thestring.__contains__("5") or thestring.__contains__("6") or thestring.__contains__("7") or thestring.__contains__("8") or thestring.__contains__("9") or thestring.__contains__("½") or thestring.__contains__("¼") or thestring.__contains__("⅔") or thestring.__contains__('⅓') or thestring.__contains__('¾'):
         ingredients.append(origstring)
     else:
         splitstring = origstring.split()
@@ -63,7 +79,7 @@ print(" ")
 print("Directions:")
 
 counter=1
-for step in steps:
+for step in newsteps:
     stepcounter = "Step "
     stepcounter += str(counter)
     stepcounter+=":"
@@ -377,9 +393,8 @@ def multiply(num,factor):
 #print(multiply("3/3 or ½",2)) 
 #print(nlp("chives")[0].pos_) 
 #ingredient_questions("how much chive do i add")
-ingredient_questions("how much paprika")
+ingredient_questions("how many tortillas")
 ingredient_questions("how much cheese")
-ingredient_questions("how many carrots")
 #print(get_plural(ingredient_info(ingredients)))
 #print(ingredient_info(ingredients))
 # questions
