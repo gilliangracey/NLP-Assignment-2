@@ -358,7 +358,7 @@ ingredient_questions("how much chive do i add")
 #print(get_plural(ingredient_info(ingredients)))
 #print(ingredient_info(ingredients))
 # questions
-'''j
+'''
 store quantity as str or number? - make conversion helper function in case people want to double or half recipe
 better way to identify units?
 better way to build ingredients/units/preparation (store them as tuple of current start & end index?) - start as [0,0], instead of adding word just increment 
