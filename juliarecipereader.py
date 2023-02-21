@@ -167,6 +167,7 @@ def plural(ingredient):
     return ingredient
 
 def ingredient_questions(question):
+    units = ['cup', 'cups', 'ml', 'mls', 'liters', 'L', 'ounces', 'oz', 'lb', 'lbs', 'teaspoon', 'teaspoons', 'tsp', 'tablespoon', 'tablespoons', 'tbsp']
     question = question.lower()
     ingredient_dict = ingredient_info(ingredients)
     print(ingredient_dict)
@@ -190,9 +191,18 @@ def ingredient_questions(question):
     if quant:
         split_q = question.split()
         if kw == "how many":
-            find_ingr = split_q[split_q.index("many")+1]
+            index = split_q.index("many")            
+            find_ingr = split_q[index+1]
+            if find_ingr in units:
+                if split_q[index+2] == 'of':
+                    find_ingr = split_q[index+3]
+                else:
+                    find_ingr = split_q[index+2]
         if kw == "how much":
-            find_ingr = split_q[split_q.index("much")+1]
+            index = split_q.index("much")
+            find_ingr = split_q[index+1]
+            if find_ingr == 'of':
+                find_ingr = split_q[index+2]
         counter = 0
         mult_ingrs = []
         if nlp(find_ingr)[0].pos_ == 'NOUN': # check if word after kw is ingredient name 
@@ -465,7 +475,7 @@ def multiply(num,factor):
 # check if end of str == .0, then convert to int, then str
 #print(multiply("3/3 or ½",2)) 
 #print(nlp("chives")[0].pos_) 
-ingredient_questions("how do i prepare the salt")
+ingredient_questions("how many cups broccoli")
 #print(get_plural(ingredient_info(ingredients)))
 #print(ingredient_info(ingredients))
 # questions
