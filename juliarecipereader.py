@@ -6,6 +6,7 @@ import numerizer
 from fractions import Fraction
 nlp = spacy.load("en_core_web_sm")
   
+
 # link for extract html data 
 def getdata(url): 
     r = requests.get(url) 
@@ -13,76 +14,32 @@ def getdata(url):
 
 
 #htmldata = getdata("https://www.allrecipes.com/recipe/24771/basic-mashed-potatoes/")
-htmldata = getdata("https://www.allrecipes.com/recipe/8493351/grain-free-broccoli-fritters/") 
+#htmldata = getdata("https://www.allrecipes.com/recipe/8493351/grain-free-broccoli-fritters/") 
 #htmldata = getdata("https://www.allrecipes.com/recipe/79543/fried-rice-restaurant-style/")
 #htmldata = getdata("https://www.allrecipes.com/recipe/60923/portobello-mushroom-stroganoff/")
 #htmldata = getdata("https://www.foodnetwork.com/recipes/ina-garten/meat-loaf-recipe-1921718")
-soup = BeautifulSoup(htmldata, 'html.parser') 
-data = '' 
-  
-
-body = soup.find_all("p")
-title = soup.find_all("h1")
-title = title[0]
-title = str(title)
-newtitle = ""
-counter=0
-flag = False
-
-while counter<len(title):
-    if title[counter]=="<":
-        flag = True
-    if title[counter]==">":
-        flag = False
-    else:
-        if flag == False:
-            newtitle+=title[counter]
-    counter+=1
 
 
-ingredients = []
-steps = []
-print(" ")
-print(newtitle)
-print(" ")
+def print_ingredients():
+    print("Ingredients:")
+    for ingredient in ingredients:
+        print(ingredient)
 
-for data in body:
-    origstring = data.get_text()
-    thestring = origstring[0]
-    if thestring.__contains__("1") or thestring.__contains__("2") or thestring.__contains__("3") or thestring.__contains__("4") or thestring.__contains__("5") or thestring.__contains__("6") or thestring.__contains__("7") or thestring.__contains__("8") or thestring.__contains__("9") or thestring.__contains__("½") or thestring.__contains__("¼"):
-        ingredients.append(origstring)
-    else:
-        splitstring = origstring.split()
-        text = splitstring[0]
-        doc = nlp(text)
-        if doc[0].tag_ == 'VB' or doc[0].tag_ == 'NN' or doc[0].tag_ == 'NNP':
-            origstring = origstring.split(".")
-            for element in origstring:
-                if element != "\n":
-                    element = element.strip()
-                    steps.append(element)
-print("Ingredients:")
+def print_directions():
+    print("Directions:")
+    counter=1
+    for step in steps:
+        stepcounter = "Step "
+        stepcounter += str(counter)
+        stepcounter+=":"
+        print(stepcounter)
+        print(step)
+        counter+=1
 
-for ingredient in ingredients:
-    print(ingredient)
-
-print(" ")
-print("Directions:")
-
-counter=1
-for step in steps:
-    stepcounter = "Step "
-    stepcounter += str(counter)
-    stepcounter+=":"
-    print(stepcounter)
-    print(step)
-    counter+=1
-
-print(" ")
 
 def ingredient_info(ingredients):
     ingredient_dict = {}
-    units = ['cup', 'cups', 'ml', 'mls', 'liters', 'L', 'ounces', 'oz', 'lb', 'lbs', 'pounds', 'pound', 'teaspoon', 'teaspoons', 'tsp', 'tablespoon', 'tablespoons', 'tbsp']
+    units = ['cup', 'cups', 'ml', 'mls', 'liters', 'L', 'ounces', 'oz', 'lb', 'lbs', 'pounds', 'pound', 'teaspoon', 'teaspoons', 'tsp', 'tablespoon', 'tablespoons', 'tbsp']    
     for ingredient in ingredients:
         split_str = ingredient.lower().split()
         quant = split_str[0]
@@ -468,11 +425,60 @@ def multiply(num,factor):
         return str(sum)
 
 
+
+print("My name is KitchenBot and I am here to help you understand the recipe you would like to make. \nAt any point, you may enter 'ingredients' to view the ingredients list or 'directions' to navigate the recipe's directions.")
+url = input("Please enter the URL of a recipe: ")
+
+htmldata = getdata(url)
+
+soup = BeautifulSoup(htmldata, 'html.parser') 
+data = '' 
+  
+
+body = soup.find_all("p")
+title = soup.find_all("h1")
+title = title[0]
+title = str(title)
+newtitle = ""
+counter=0
+flag = False
+
+while counter<len(title):
+    if title[counter]=="<":
+        flag = True
+    if title[counter]==">":
+        flag = False
+    else:
+        if flag == False:
+            newtitle+=title[counter]
+    counter+=1
+
+ingredients = []
+steps = []
+
+for data in body:
+    origstring = data.get_text()
+    thestring = origstring[0]
+    if thestring.__contains__("1") or thestring.__contains__("2") or thestring.__contains__("3") or thestring.__contains__("4") or thestring.__contains__("5") or thestring.__contains__("6") or thestring.__contains__("7") or thestring.__contains__("8") or thestring.__contains__("9") or thestring.__contains__("½") or thestring.__contains__("¼"):
+        ingredients.append(origstring)
+    else:
+        splitstring = origstring.split()
+        text = splitstring[0]
+        doc = nlp(text)
+        if doc[0].tag_ == 'VB' or doc[0].tag_ == 'NN' or doc[0].tag_ == 'NNP':
+            origstring = origstring.split(".")
+            for element in origstring:
+                if element != "\n":
+                    element = element.strip()
+                    steps.append(element)
+
+print("I see that you would like to make " + newtitle[1:len(newtitle)] + '.')
+print("Right now, would you like to go through the ingredients or the directions?")
+
 ansArr = ['Nothing','Step','Ingredient']
 stepI = 0
-print("step 1:", steps[0])
-#global curr_ingr
 curr_ingr = ''
+
 while(True):
 
     preAns = ansArr[0]
@@ -483,14 +489,20 @@ while(True):
 
     for k,v in numDict.items():
         if int(v) < len(steps) and "step" in inpt.lower():
-            print(steps[int(v) - 1])
+            print("step " + v + ": " + steps[int(v) - 1])
             stepI = int(v) - 1
+
+    if "ingredient" in inpt.lower():
+        print_ingredients()
+
+    if "directions" in inpt.lower():
+        print("step 1:", steps[0])
 
     if "next" in inpt.lower():
         if stepI < len(steps) - 1:
             stepI += 1
             curr_ingr = ''
-            print ("step", (stepI + 1), ": ", steps[stepI])
+            print ("step", str(stepI + 1) + ":", steps[stepI])
         else:
             print("There are no more steps!")
 
@@ -498,29 +510,10 @@ while(True):
         if stepI >= 1:
             stepI -= 1
             curr_ingr = ''
-            print ("step", (stepI + 1), ": ", steps[stepI])
+            print ("step", str(stepI + 1) + ":", steps[stepI])
         else:
             print("There are no steps before this!")
 
     else:
         new_curr_ingr = ingredient_questions(inpt,curr_ingr)
         curr_ingr = new_curr_ingr
-
-# check if end of str == .0, then convert to int, then str
-#print(multiply("3/3 or ½",2)) 
-#print(nlp("chives")[0].pos_) 
-#print(ingredient_info(ingredients))
-#ingredient_questions("how do i prepare the garlic")
-#print(get_plural(ingredient_info(ingredients)))
-#print(ingredient_info(ingredients))
-# questions
-'''
-store quantity as str or number? - make conversion helper function in case people want to double or half recipe
-better way to identify units?
-better way to build ingredients/units/preparation (store them as tuple of current start & end index?) - start as [0,0], instead of adding word just increment 
-    2nd index & grab at the end
-    - would still have to check if start index is 0 (like checking if str == '') to know that 1st index should become i
-how to handle "plus more for garnish"? - parse for "plus" but how do we account for this in the quantities
-what if preparation comes before food, like "minced garlic"? does it matter? - check if it's in past tense, check if words end in 'ed' 
-can we ask user clarifying questions? like "which cheese?" 
-'''
