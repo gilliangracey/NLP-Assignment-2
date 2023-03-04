@@ -443,7 +443,7 @@ while counter < len(steps):
     steps[counter] = step
     counter+=1
 
-print("I see that you would like to make " + title[1:len(title)] + '.')
+print("I see that you would like to make " + title[0:len(title)] + '.')
 print("Right now, would you like to go through the ingredients or the directions?")
 
 ansArr = ['Nothing','Step','Ingredient']
