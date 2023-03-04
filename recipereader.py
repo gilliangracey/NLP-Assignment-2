@@ -118,11 +118,12 @@ def plural(ingredient):
             return ingredient[0:len(ingredient)-1]
     return ingredient
 
-def ingredient_questions(question,curr_ingr):
+def ingredient_questions(question,step,curr_ingr):
     units = ['cup', 'cups', 'ml', 'mls', 'liters', 'L', 'ounces', 'oz', 'lb', 'lbs', 'pounds', 'pound', 'teaspoon', 'teaspoons', 'tsp', 'tablespoon', 'tablespoons', 'tbsp']
     question = question.lower()
     ingredient_dict = ingredient_info(ingredients)
     quant = False 
+    time = False
     kw = ''
     if question.__contains__("double"):
         kw = "factor"
@@ -130,6 +131,10 @@ def ingredient_questions(question,curr_ingr):
     elif question.__contains__("triple"):
         kw = "factor"
         factor = 3
+    elif question.__contains__("time") or question.__contains__("how long"):
+        time = True
+    elif question.__contains__("temperature"):
+        temp = True
     elif question.__contains__("amount"):
         quant = True
     elif question.__contains__("how much"):
@@ -140,6 +145,59 @@ def ingredient_questions(question,curr_ingr):
         kw = "how many"
     elif question.__contains__("prep"):
         kw = "prep"
+    if time:
+        if step.__contains__("mins"):
+            time = ''
+            if step.__contains__("hour"):
+                timeindex = step.split().index("hour")
+                time = str(step.split()[timeindex-1]) + " hour, "
+            index = step.split().index("mins") - 1
+            while index > -1:
+                try:
+                    num = step.split()[index]
+                    f = float(num)
+                    time = time + num + " minutes"
+                    break
+                except:
+                    index = index - 1
+            print(time)
+            return ''
+        elif step.__contains__("minutes"):
+            time = ''
+            if step.__contains__("hour"):
+                timeindex = step.split().index("hour")
+                time = str(step.split()[timeindex-1]) + " hour, "
+            index = step.split().index("minutes") - 1
+            while index > -1:
+                try:
+                    num = step.split()[index]
+                    f = float(num)
+                    time = time + num + " minutes"
+                    break
+                except:
+                    print("exception")
+                    index = index - 1
+            print(time)
+            return ''
+        elif step.__contains__("min"):
+            time = ''
+            if step.__contains__("hour"):
+                timeindex = step.split().index("hour")
+                time = str(step.split()[timeindex-1]) + " hour, "
+            index = step.split().index("min") - 1
+            while index > -1:
+                try:
+                    num = step.split()[index]
+                    f = float(num)
+                    time = time + num + " minutes"
+                    break
+                except:
+                    index = index - 1
+            print(time)
+            return ''
+        else:
+            print("This step does not provide a time")
+            return ''
     if quant:
         split_q = question.split()
         if kw == "how many":
@@ -430,7 +488,6 @@ def multiply(num,factor):
 print("My name is KitchenBot and I am here to help you understand the recipe you would like to make. \nAt any point, you may enter 'ingredients' to view the ingredients list or 'directions' to navigate the recipe's directions.")
 url = input("Please enter the URL of a recipe: ")
 
-htmldata = getdata(url)
 scraper = scrape_me(url)
 title = scraper.title()
 ingredients = scraper.ingredients()
@@ -441,7 +498,11 @@ while counter < len(steps):
     step = steps[counter]
     step = step.strip()
     steps[counter] = step
-    counter+=1
+    counter+=1 
+  
+
+
+
 
 print("I see that you would like to make " + title[0:len(title)] + '.')
 print("Right now, would you like to go through the ingredients or the directions?")
@@ -486,4 +547,5 @@ while(True):
             print("There are no steps before this!")
 
     else:
-        new_curr_ingr = ingredient_questions(inpt,curr_ingr)
+        new_curr_ingr = ingredient_questions(inpt,steps[stepI],curr_ingr)
+        curr_ingr = new_curr_ingr
