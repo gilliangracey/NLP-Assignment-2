@@ -13,6 +13,30 @@ def getdata(url):
     r = requests.get(url) 
     return r.text 
 
+htmldata = getdata('https://www.foodnetwork.com/recipes/ingredient-substitution-guide') 
+soup = BeautifulSoup(htmldata, 'html.parser') 
+data = '' 
+
+
+body = soup.find_all("p")
+body = body[2:77]
+keys = []
+replacements = []
+replacementdict = {}
+for data in body:
+    data = data.text
+    data = data.lower()
+    data = data.split(":")
+    data[-1] = data[-1][1:]
+    if data[0].__contains__("("):
+        data[0] = data[0].split("(")
+        data[0] = data[0][0][:-1]
+    keys.append(data[0])
+    replacements.append(data[1])
+    replacementdict[data[0]] = data[1]
+
+replacementdict["flour"] = 'flour alternatives include chickpea flour, rice flour, almond flour, and buckwheat flour'
+
 
 #htmldata = getdata("https://www.allrecipes.com/recipe/24771/basic-mashed-potatoes/")
 #htmldata = getdata("https://www.allrecipes.com/recipe/8493351/grain-free-broccoli-fritters/") 
@@ -546,6 +570,17 @@ while(True):
         else:
             print("There are no steps before this!")
 
+    if "substitute" in inpt.lower() or "replace" in inpt.lower():
+        inpt = inpt.lower()
+        inpt = inpt.split()
+        flag = False
+        for word in inpt:
+            if word in replacementdict:
+                print("Substitute", word, "with:")
+                print(replacementdict[word])
+                flag = True
+        if flag==False:
+            print("No replacements were found")
     else:
         new_curr_ingr = ingredient_questions(inpt,steps[stepI],curr_ingr)
         curr_ingr = new_curr_ingr
