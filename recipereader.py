@@ -569,18 +569,46 @@ while(True):
             print ("step", str(stepI + 1) + ":", steps[stepI])
         else:
             print("There are no steps before this!")
-
+    
     if "substitute" in inpt.lower() or "replace" in inpt.lower():
-        inpt = inpt.lower()
-        inpt = inpt.split()
+        newinpt = inpt.lower()
+        newinpt = newinpt.split()
         flag = False
-        for word in inpt:
+        for word in newinpt:
             if word in replacementdict:
                 print("Substitute", word, "with:")
                 print(replacementdict[word])
                 flag = True
         if flag==False:
             print("No replacements were found")
+#https://www.allrecipes.com/recipe/24771/basic-mashed-potatoes/
+    if ("how do i" in inpt.lower() or "how do you" in inpt.lower()) and "do that" not in inpt.lower():
+        myUrl = "https://www.youtube.com/results?search_query="
+        sentArr = inpt.split()
+        for i in range(len(sentArr)):
+            myUrl = myUrl + sentArr[i]
+            if i != len(sentArr) - 1:
+                myUrl = myUrl + "+"
+        print("This may help you!")
+        print(myUrl)
+    elif "how" in inpt.lower() or "how do i do that" in inpt.lower():
+        myUrl = "https://www.youtube.com/results?search_query="
+        stepArr = steps[stepI].split()
+        for i in range(len(stepArr)):
+            myUrl = myUrl + stepArr[i]
+            if i != len(stepArr) - 1:
+                myUrl = myUrl + "+"
+        print("This may help you!")
+        print(myUrl)
+    if "what is" in inpt.lower():
+        myUrl = "https://www.google.com/search?q="
+        sentArr = inpt.split()
+        for i in range(len(sentArr)):
+            myUrl = myUrl + sentArr[i]
+            if i != len(sentArr) - 1:
+                myUrl = myUrl + "+"
+        print("This may help you!")
+        print(myUrl)
     else:
         new_curr_ingr = ingredient_questions(inpt,steps[stepI],curr_ingr)
         curr_ingr = new_curr_ingr
