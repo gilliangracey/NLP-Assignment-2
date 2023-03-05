@@ -128,8 +128,26 @@ def ingredient_info(ingredients):
         ingredient_dict[ingredient] = [quant, unit, prep]
     return ingredient_dict
 
+
+def plural(ingredient):
+    if len(ingredient.split()) == 0:
+        if nlp(ingredient)[0].tag_ == 'NN': # singular
+            return ingredient+'s'
+        elif nlp(ingredient)[0].tag_ == 'NNS' or ingredient[len(ingredient)-1] == 's': # plural
+            return ingredient[0:len(ingredient)-1]  
+    else:      
+        lastword = ingredient.split()[len(ingredient.split())-1]
+        if nlp(lastword)[0].tag_ == 'NN': # singular
+            return ingredient+'s'
+        elif nlp(lastword)[0].tag_ == 'NNS' or lastword[len(lastword)-1] == 's': # plural
+            return ingredient[0:len(ingredient)-1]
+    return ingredient
+
+
 def has_kw(question):
-    kw = ['time','how long','temperature','degrees','amount','how much','how many','prep']
+    kw = ['time','how long','temperature','degrees','amount','how much','how many','prep','tool','utensil','done','know']
+    if question.__contains__("use") and question.__contains__("what"):
+        return True
     for w in kw:
         if question.__contains__(w):
             return True
@@ -143,6 +161,8 @@ def ingredient_questions(question,step,curr_ingr):
     quant = False 
     time = False
     temp = False
+    tool = False
+    done = False
     kw = ''
     if question.__contains__("time") or question.__contains__("how long") or question.__contains__("minutes"):
         time = True
@@ -158,6 +178,75 @@ def ingredient_questions(question,step,curr_ingr):
         kw = "how many"
     elif question.__contains__("prep"):
         kw = "prep"
+    elif question.__contains__("tool") or question.__contains__("utensil") or (question.__contains__("use") and question.__contains__("what")):
+        tool = True
+    elif question.__contains__("done") or question.__contains__("know"):
+        done = True
+    if done:
+        if step.__contains__("until"):
+            index = step.split().index("until") + 1
+            total = 'It is done when'
+            while index < len(step.split()):
+                word = step.split()[index]
+                if word[len(word)-1] == ',':
+                    return ['',total+ ' ' + word[0:len(word)-1]]
+                total = total + ' ' + word
+                index = index + 1
+            return ['',total]
+        '''
+        elif step.__contains__("when"):
+            index = step.split().index("when") + 1
+            total = 'It is done when'
+            while index < len(step.split()):
+                word = step.split()[index]
+                if word[len(word)-1] == ',':
+                    return ['',total+ ' ' + word[0:len(word)-1]]
+                total = total + ' ' + word
+                index = index + 1
+            return ['',total]
+        '''
+        return ['',"I'm not sure if your question applies to this step"]
+    if tool:
+        if step.__contains__("when"):
+            index = step.split().index("when") + 1
+            total = 'It is done when'
+            while index < len(step.split()):
+                word = step.split()[index]
+                total = total + ' ' + word
+                if word[len(word)-1] == ',':
+                    return ['',total]
+                index = index + 1
+            return ['',total]
+    if tool:
+        if step.__contains__("use"):
+            try:
+                index = step.split().index("use") + 1
+            except: 
+                index = step.split().index("using") + 1
+            total = 'You should use'
+            while index < len(step.split()):
+                word = step.split()[index]
+                if word == 'until':
+                    return ['',total]
+                total = total + ' ' + word
+                if word[len(word)-1] == ',':
+                    return ['',total]
+                index = index + 1
+            return ['',total]
+        elif step.__contains__("with"):
+            index = step.split().index("with") + 1
+            total = 'You should use'
+            while index < len(step.split()):
+                word = step.split()[index]
+                if word == 'until':
+                    return ['',total]
+                total = total + ' ' + word
+                if word[len(word)-1] == ',':
+                    return ['',total]
+                index = index + 1
+            return ['',total]
+        else:
+            return ['',"There are no tools used in this step"]
     if temp:
         unit = ''
         if step.split().__contains__("f") or step.split().__contains__("fahrenheit"):
