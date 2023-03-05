@@ -562,6 +562,26 @@ def ingredient_questions(question,step,curr_ingr):
 
 print("My name is KitchenBot and I am here to help you understand the recipe you would like to make. \nAt any point, you may enter 'ingredients' to view the ingredients list or 'directions' to navigate the recipe's directions.")
 url = input("Please enter the URL of a recipe: ")
+synonymdict = {}
+synonymdict["cook"] = ["bake", "saute", "sauté", "sear", "simmer", "melt", "heat", "boil", "broil"]
+synonymdict["bake"] = ["cook", "saute", "sauté", "sear", "simmer", "melt", "heat", "boil", "broil"]
+synonymdict["saute"] = ["bake", "cook", "sauté", "sear", "simmer", "melt", "heat", "boil", "broil"]
+synonymdict["sauté"] = ["bake", "saute", "cook", "sear", "simmer", "melt", "heat", "boil", "broil"]
+synonymdict["sear"] = ["bake", "saute", "cook", "sauté", "simmer", "melt", "heat", "boil", "broil"]
+synonymdict["simmer"] = ["bake", "saute", "cook", "sauté", "sear", "melt", "heat", "boil", "broil"]
+synonymdict["melt"] = ["bake", "saute", "cook", "sauté", "sear", "simmer", "heat", "boil", "broil"]
+synonymdict["heat"] = ["bake", "saute", "cook", "sauté", "sear", "simmer", "melt", "boil", "broil"]
+synonymdict["boil"] = ["bake", "saute", "cook", "sauté", "sear", "simmer", "melt", "heat", "broil"]
+synonymdict["broil"] = ["bake", "saute", "cook", "sauté", "sear", "simmer", "melt", "heat", "boil"]
+synonymdict["combine"] = ["mix", "stir", "add", "pour", "whisk", "sift"]
+synonymdict["drain"] = ["strain"]
+synonymdict["strain"] = ["drain"]
+synonymdict["mix"] = ["combine", "stir", "add", "pour", "whisk", "sift"]
+synonymdict["stir"] = ["mix", "combine", "add", "pour", "whisk", "sift"]
+synonymdict["add"] = ["mix", "stir", "combine", "pour", "whisk", "sift"]
+synonymdict["pour"] = ["mix", "stir", "add", "combine", "whisk", "sift"]
+synonymdict["whisk"] = ["mix", "stir", "add", "pour", "combine", "sift"]
+synonymdict["sift"] = ["mix", "stir", "add", "pour", "combine", "whisk"]
 
 scraper = scrape_me(url)
 title = scraper.title()
@@ -667,39 +687,25 @@ while(True):
         if ("how do i" in inpt.lower() or "how do you" in inpt.lower()) and "do that" not in inpt.lower():
             splitted = inpt.lower().split()
             theverb = splitted[3]
-            lastpart = splitted[3:]
-            flag = False
-            directions_referred_to = {}
-            themax = 0
-            maxdir = ""
-            for step in steps:
-                splitstep = step.split()
-                for word in splitstep:
-                    if word.__contains__(theverb):
-                        flag = True
-            if flag == False:
-                for word in lastpart:
-                    for step in steps:
-                        if word in step:
-                            if step in directions_referred_to:
-                                directions_referred_to[step]+=1
-                                if directions_referred_to[step]>themax:
-                                    themax = directions_referred_to[step]
-                                    maxdir = step
-                            else:
-                                directions_referred_to[step]=1
-                                if directions_referred_to[step]>themax:
-                                    themax = directions_referred_to[step]
-                                    maxdir = step
-            if len(directions_referred_to)>0:
-                #print("THIS IS THE DIRECTION")
-                print(maxdir)
-                sentArr = ['how', 'do', 'i']
-                splitdir = maxdir.split()
-                for word in splitdir:
-                    sentArr.append(word)
-            else:
+            thedirection = steps[stepI]
+            thedirection = thedirection.lower()
+            if thedirection.__contains__(theverb):
                 sentArr = inpt.split()
+            else:
+                if theverb in synonymdict:
+                    array = synonymdict[theverb]
+                    newverb = ""
+                    for word in array:
+                        if thedirection.__contains__(word):
+                            newverb = word
+                            break
+                    if newverb == "":
+                        sentArr = inpt.split()
+                    else:
+                        print(newverb)
+                        sentArr = newverb.split()
+                else:
+                    sentArr = inpt.split()
             myUrl = "https://www.youtube.com/results?search_query="
             for i in range(len(sentArr)):
                 myUrl = myUrl + sentArr[i]
