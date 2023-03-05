@@ -179,6 +179,7 @@ def ingredient_questions(question,step,curr_ingr):
     temp = False
     tool = False
     done = False
+    prep = False
     kw = ''
     if question.__contains__("time") or question.__contains__("how long") or question.__contains__("minutes"):
         time = True
@@ -193,7 +194,7 @@ def ingredient_questions(question,step,curr_ingr):
         quant = True
         kw = "how many"
     elif question.__contains__("prep"):
-        kw = "prep"
+        prep = True
     elif question.__contains__("tool") or question.__contains__("utensil") or (question.__contains__("use") and question.__contains__("what")):
         tool = True
     elif question.__contains__("done") or question.__contains__("know"):
@@ -223,17 +224,6 @@ def ingredient_questions(question,step,curr_ingr):
         '''
         return ['',"I'm not sure if your question applies to this step"]
     if tool:
-        if step.__contains__("when"):
-            index = step.split().index("when") + 1
-            total = 'It is done when'
-            while index < len(step.split()):
-                word = step.split()[index]
-                total = total + ' ' + word
-                if word[len(word)-1] == ',':
-                    return ['',total]
-                index = index + 1
-            return ['',total]
-    if tool:
         if step.__contains__("use"):
             try:
                 index = step.split().index("use") + 1
@@ -261,8 +251,19 @@ def ingredient_questions(question,step,curr_ingr):
                     return ['',total]
                 index = index + 1
             return ['',total]
-        else:
-            return ['',"There are no tools used in this step"]
+        elif step.__contains__("in a"):
+            index = step.split().index("in") + 1
+            total = 'You should use'
+            while index < len(step.split()):
+                word = step.split()[index]
+                if word == 'until':
+                    return ['',total]
+                total = total + ' ' + word
+                if word[len(word)-1] == ',':
+                    return ['',total]
+                index = index + 1
+            return ['',total]
+        return ['',"There are no tools used in this step"]
     if temp:
         unit = ''
         if step.split().__contains__("f") or step.split().__contains__("fahrenheit"):
@@ -295,7 +296,13 @@ def ingredient_questions(question,step,curr_ingr):
                     else:
                         continue
                 if word.__contains__('min'):
-                    return ['',time]  
+                    if not step.__contains__('sec'):
+                        return ['',time]
+                    else:
+                        continue
+                if word.__contains__('sec'):
+                    return ['',time]
+            return ['',time]
         elif step.__contains__("mins"):
             kw = "mins"
             hasmin = True
@@ -336,6 +343,15 @@ def ingredient_questions(question,step,curr_ingr):
                     index = step.split().index("min,") - 1
                 elif step.__contains__("min."):
                     index = step.split().index("min.") - 1 
+        elif step.__contains__("seconds"):
+            kw = "seconds"
+            try:
+                index = step.split().index("seconds") - 1
+            except:
+                if step.__contains__("seconds,"):
+                    index = step.split().index("seconds,") - 1
+                elif step.__contains__("seconds."):
+                    index = step.split().index("seconds.") - 1 
         elif step.__contains__("hours"):
             kw = "hours"
             try:
@@ -501,7 +517,7 @@ def ingredient_questions(question,step,curr_ingr):
                 curr_ingr = ingredient
                 stri = "You need " + lst[0] + t1 + lst[1] + t2 + ingredient
                 return [curr_ingr,stri]        
-    if kw == "prep":
+    if prep:
         for ingredient in ingredient_dict:
             if question.__contains__(ingredient) or question.__contains__(plural(ingredient)):
                 lst = ingredient_dict[ingredient]
@@ -522,8 +538,8 @@ def ingredient_questions(question,step,curr_ingr):
                         verbs = lst[2]
                         if verbs == '':
                             curr_ingr = ingredient
-                            print('No prep needs to be done')
-                            return curr_ingr
+                            stri = 'No prep needs to be done'
+                            return [curr_ingr,stri]
                         else:
                             curr_ingr = ingredient
                             stri = 'The ' + ingredient + ' should be ' + verbs
