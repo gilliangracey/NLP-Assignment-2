@@ -752,3 +752,50 @@ while(True):
                     myUrl = myUrl + "+"
             print("This may help you!")
             print(myUrl)
+        if "what do i" in inpt.lower():
+            tagged = nlp(inpt.lower())
+            curdir = steps[stepI]
+            taggeddir = nlp(curdir)
+            dirobjects = []
+            verbsacting = []
+            for tag in tagged:
+                if tag.tag_ == "NN" or tag.tag_ == "NNS" or tag.tag_ == "NNP":
+                    dirobjects.append(tag)
+            for tag in taggeddir:
+                if tag.tag_=="VB" or tag.tag_ == "VBS":
+                    verbsacting.append(tag)
+            answer = ""
+            flag = False
+            for theobjects in dirobjects:
+                obj = str(theobjects)
+                if obj in curdir:
+                    flag = True
+            if len(verbsacting) == 0 or flag == False:
+                print("Sorry, the answer to your question is not in the current step")
+            elif len(verbsacting) == 1:
+                theverb = str(verbsacting[0])
+                answer += theverb
+                answer+= " "
+            else:
+                counter = 0
+                for verb in verbsacting:
+                    theverb = str(verb)
+                    if counter==len(verbsacting)-1:
+                        answer+="and"
+                        answer+=" "
+                        answer+=theverb
+                        answer+=" "
+                    else:
+                        answer+=theverb
+                        answer+=", "
+                    counter+=1
+            if len(dirobjects)>1 or str(dirobjects[0])[-1]=="s":
+                if flag==True:  
+                    answer+="them"
+                else:
+                    answer = ""
+            elif flag==True:
+                answer+="it"
+            else:
+                answer = ""
+            print(answer)
