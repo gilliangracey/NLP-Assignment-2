@@ -602,26 +602,6 @@ def ingredient_questions(question,step,curr_ingr):
 
 print("My name is KitchenBot and I am here to help you understand the recipe you would like to make. \nAt any point, you may enter 'ingredients' to view the ingredients list or 'directions' to navigate the recipe's directions.")
 url = input("Please enter the URL of a recipe: ")
-synonymdict = {}
-synonymdict["cook"] = ["bake", "saute", "sauté", "sear", "simmer", "melt", "heat", "boil", "broil"]
-synonymdict["bake"] = ["cook", "saute", "sauté", "sear", "simmer", "melt", "heat", "boil", "broil"]
-synonymdict["saute"] = ["bake", "cook", "sauté", "sear", "simmer", "melt", "heat", "boil", "broil"]
-synonymdict["sauté"] = ["bake", "saute", "cook", "sear", "simmer", "melt", "heat", "boil", "broil"]
-synonymdict["sear"] = ["bake", "saute", "cook", "sauté", "simmer", "melt", "heat", "boil", "broil"]
-synonymdict["simmer"] = ["bake", "saute", "cook", "sauté", "sear", "melt", "heat", "boil", "broil"]
-synonymdict["melt"] = ["bake", "saute", "cook", "sauté", "sear", "simmer", "heat", "boil", "broil"]
-synonymdict["heat"] = ["bake", "saute", "cook", "sauté", "sear", "simmer", "melt", "boil", "broil"]
-synonymdict["boil"] = ["bake", "saute", "cook", "sauté", "sear", "simmer", "melt", "heat", "broil"]
-synonymdict["broil"] = ["bake", "saute", "cook", "sauté", "sear", "simmer", "melt", "heat", "boil"]
-synonymdict["combine"] = ["mix", "stir", "add", "pour", "whisk", "sift"]
-synonymdict["drain"] = ["strain"]
-synonymdict["strain"] = ["drain"]
-synonymdict["mix"] = ["combine", "stir", "add", "pour", "whisk", "sift"]
-synonymdict["stir"] = ["mix", "combine", "add", "pour", "whisk", "sift"]
-synonymdict["add"] = ["mix", "stir", "combine", "pour", "whisk", "sift"]
-synonymdict["pour"] = ["mix", "stir", "add", "combine", "whisk", "sift"]
-synonymdict["whisk"] = ["mix", "stir", "add", "pour", "combine", "sift"]
-synonymdict["sift"] = ["mix", "stir", "add", "pour", "combine", "whisk"]
 
 scraper = scrape_me(url)
 title = scraper.title()
@@ -730,27 +710,7 @@ while(True):
 #https://www.allrecipes.com/recipe/8493351/grain-free-broccoli-fritters/
     if not flag:
         if ("how do i" in inpt.lower() or "how do you" in inpt.lower()) and "do that" not in inpt.lower():
-            splitted = inpt.lower().split()
-            theverb = splitted[3]
-            thedirection = steps[stepI]
-            thedirection = thedirection.lower()
-            if thedirection.__contains__(theverb):
-                sentArr = inpt.split()
-            else:
-                if theverb in synonymdict:
-                    array = synonymdict[theverb]
-                    newverb = ""
-                    for word in array:
-                        if thedirection.__contains__(word):
-                            newverb = word
-                            break
-                    if newverb == "":
-                        sentArr = inpt.split()
-                    else:
-                        print(newverb)
-                        sentArr = newverb.split()
-                else:
-                    sentArr = inpt.split()
+            sentArr = inpt.split()
             myUrl = "https://www.youtube.com/results?search_query="
             for i in range(len(sentArr)):
                 myUrl = myUrl + sentArr[i]
@@ -786,13 +746,15 @@ while(True):
                 if tag.tag_ == "NN" or tag.tag_ == "NNS" or tag.tag_ == "NNP":
                     dirobjects.append(tag)
             for tag in taggeddir:
-                if tag.tag_=="VB" or tag.tag_ == "VBS":
+                if tag.tag_=="VB" or tag.tag_ == "VBS" or tag.tag_ == "VBP":
                     verbsacting.append(tag)
             answer = ""
             flag = False
             for theobjects in dirobjects:
                 obj = str(theobjects)
-                if obj in curdir:
+                curdir = curdir.lower()
+                obj = obj.lower()
+                if curdir.__contains__(obj):
                     flag = True
             if len(verbsacting) == 0 or flag == False:
                 print("Sorry, the answer to your question is not in the current step")
@@ -814,10 +776,29 @@ while(True):
                         answer+=", "
                     counter+=1
             if len(dirobjects)>1 or str(dirobjects[0])[-1]=="s":
-                if flag==True:  
-                    answer+="them"
+                if len(dirobjects)==2:
+                    ingredient = ""
+                    for word in dirobjects:
+                        word = str(word)
+                        ingredient+=word
+                        ingredient+= " "
+                    ingredient = ingredient[:-1]
+                    sflag = False
+                    for ingr in ingredients:
+                        if ingredient in ingr:
+                            sflag = True
+                    if sflag == True:
+                        answer+="it"
+                    elif flag==True:  
+                        answer+="them"
+                    else:
+                        answer = ""
                 else:
-                    answer = ""
+                    if flag==True:  
+                        answer+="them"
+                    else:
+                        answer = ""
+
             elif flag==True:
                 answer+="it"
             else:
