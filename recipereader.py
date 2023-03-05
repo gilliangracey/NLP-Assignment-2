@@ -232,7 +232,7 @@ def ingredient_questions(question,step,curr_ingr):
             total = 'You should use'
             while index < len(step.split()):
                 word = step.split()[index]
-                if word == 'until':
+                if word == 'until' or word == 'to' or word == 'and':
                     return ['',total]
                 total = total + ' ' + word
                 if word[len(word)-1] == ',':
@@ -244,7 +244,7 @@ def ingredient_questions(question,step,curr_ingr):
             total = 'You should use'
             while index < len(step.split()):
                 word = step.split()[index]
-                if word == 'until':
+                if word == 'until' or word == 'to' or word == 'and':
                     return ['',total]
                 total = total + ' ' + word
                 if word[len(word)-1] == ',':
@@ -256,7 +256,19 @@ def ingredient_questions(question,step,curr_ingr):
             total = 'You should use'
             while index < len(step.split()):
                 word = step.split()[index]
-                if word == 'until':
+                if word == 'until' or word == 'of' or word == 'and':
+                    return ['',total]
+                total = total + ' ' + word
+                if word[len(word)-1] == ',':
+                    return ['',total]
+                index = index + 1
+            return ['',total]
+        elif step.__contains__("to a"):
+            index = step.split().index("to") + 1
+            total = 'You should use'
+            while index < len(step.split()):
+                word = step.split()[index]
+                if word == 'until' or word == 'of' or word == 'and':
                     return ['',total]
                 total = total + ' ' + word
                 if word[len(word)-1] == ',':
@@ -270,6 +282,18 @@ def ingredient_questions(question,step,curr_ingr):
             unit = "Fahrenheit"
         elif step.split().__contains__("c") or step.split().__contains__("celsius"):
             unit = "Celsius"
+        elif step.__contains__("heat"):
+            step = step.split()
+            index = step.index("heat")
+            if index > 3:
+                if step[index-2] == 'or' or step[index-2] == 'to':
+                    stri = ' '.join(step[index-3:index+1])
+                    return ['',stri]
+                else:
+                    stri = ' '.join(step[index-1:index+1])
+                    return ['',stri]
+            stri = ' '.join(step[index-1:index+1])
+            return ['',stri]
         for word in step.split():
             try:
                 f = float(word)
