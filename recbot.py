@@ -13,6 +13,30 @@ def getdata(url):
     r = requests.get(url) 
     return r.text 
 
+htmldata = getdata('https://www.foodnetwork.com/recipes/ingredient-substitution-guide') 
+soup = BeautifulSoup(htmldata, 'html.parser') 
+data = '' 
+
+
+body = soup.find_all("p")
+body = body[2:77]
+keys = []
+replacements = []
+replacementdict = {}
+for data in body:
+    data = data.text
+    data = data.lower()
+    data = data.split(":")
+    data[-1] = data[-1][1:]
+    if data[0].__contains__("("):
+        data[0] = data[0].split("(")
+        data[0] = data[0][0][:-1]
+    keys.append(data[0])
+    replacements.append(data[1])
+    replacementdict[data[0]] = data[1]
+
+replacementdict["flour"] = 'flour alternatives include chickpea flour, rice flour, almond flour, and buckwheat flour'
+
 
 #htmldata = getdata("https://www.allrecipes.com/recipe/24771/basic-mashed-potatoes/")
 #htmldata = getdata("https://www.allrecipes.com/recipe/8493351/grain-free-broccoli-fritters/") 
@@ -520,9 +544,14 @@ while(True):
     numDict = doc._.numerize()
 
     for k,v in numDict.items():
-        if int(v) < len(steps) and "step" in inpt.lower():
-            print("step " + v + ": " + steps[int(v) - 1])
-            stepI = int(v) - 1
+        if v.isnumeric():
+            if int(v) < len(steps) and "step" in inpt.lower():
+                print("step " + v + ": " + steps[int(v) - 1])
+                stepI = int(v) - 1
+        else:
+            if int(v[0]) < len(steps) and "step" in inpt.lower():
+                print("step " + v[0] + ": " + steps[int(v[0]) - 1])
+                stepI = int(v[0]) - 1
 
     if "ingredient" in inpt.lower():
         print_ingredients()
@@ -545,10 +574,18 @@ while(True):
             print ("step", str(stepI + 1) + ":", steps[stepI])
         else:
             print("There are no steps before this!")
-
-    else:
-        new_curr_ingr = ingredient_questions(inpt,steps[stepI],curr_ingr)
-        curr_ingr = new_curr_ingr
+    
+    if "substitute" in inpt.lower() or "replace" in inpt.lower():
+        newinpt = inpt.lower()
+        newinpt = newinpt.split()
+        flag = False
+        for word in newinpt:
+            if word in replacementdict:
+                print("Substitute", word, "with:")
+                print(replacementdict[word])
+                flag = True
+        if flag==False:
+            print("No replacements were found")
 #https://www.allrecipes.com/recipe/24771/basic-mashed-potatoes/
     if ("how do i" in inpt.lower() or "how do you" in inpt.lower()) and "do that" not in inpt.lower():
         myUrl = "https://www.youtube.com/results?search_query="
@@ -577,3 +614,6 @@ while(True):
                 myUrl = myUrl + "+"
         print("This may help you!")
         print(myUrl)
+    else:
+        new_curr_ingr = ingredient_questions(inpt,steps[stepI],curr_ingr)
+        curr_ingr = new_curr_ingr
