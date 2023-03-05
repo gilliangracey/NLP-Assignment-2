@@ -612,9 +612,14 @@ while(True):
     numDict = doc._.numerize()
 
     for k,v in numDict.items():
-        if int(v) < len(steps) and "step" in inpt.lower():
-            print("step " + v + ": " + steps[int(v) - 1])
-            stepI = int(v) - 1
+        if v.isnumeric():
+            if int(v) < len(steps) and "step" in inpt.lower():
+                print("step " + v + ": " + steps[int(v) - 1])
+                stepI = int(v) - 1
+        else:
+            if int(v[0]) < len(steps) and "step" in inpt.lower():
+                print("step " + v[0] + ": " + steps[int(v[0]) - 1])
+                stepI = int(v[0]) - 1
 
     if "ingredient" in inpt.lower():
         print_ingredients()
