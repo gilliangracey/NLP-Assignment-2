@@ -144,7 +144,7 @@ def ingredient_questions(question,step,curr_ingr):
     time = False
     temp = False
     kw = ''
-    elif question.__contains__("time") or question.__contains__("how long") or question.__contains__("minutes"):
+    if question.__contains__("time") or question.__contains__("how long") or question.__contains__("minutes"):
         time = True
     elif question.__contains__("temperature") or question.__contains__("degrees"):
         temp = True
