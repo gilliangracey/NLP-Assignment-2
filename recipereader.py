@@ -27,6 +27,15 @@ for data in body:
     data = data.text
     data = data.lower()
     data = data.split(":")
+    if len(data)>2:
+        counter=1
+        newvalue = ""
+        while counter<len(data):
+            newvalue+=data[counter]
+            newvalue+=":"
+            counter+=1
+        newvalue = newvalue[:-1]
+        data[1] = newvalue
     data[-1] = data[-1][1:]
     if data[0].__contains__("("):
         data[0] = data[0].split("(")
@@ -36,8 +45,15 @@ for data in body:
     replacementdict[data[0]] = data[1]
 
 replacementdict["flour"] = 'flour alternatives include chickpea flour, rice flour, almond flour, and buckwheat flour'
-
-
+replacementdict["cheese"] = "replace cheese with nutritional yeast or the following cheeses: Parmesan, pecorino, mozzarella, goat, brie, feta, Monterey Jack, cheddar, pepper jack, American, provolone"
+replacementdict["pasta"] = "couscous, potatoes, egg noodles, zucchini noodles, spaghetti squash, eggplant"
+replacementdict["rice"] = "barley, quinoa, cauliflower"
+replacementdict["carrots"] = "potatoes, celery"
+replacementdict["potatoes"] = "carrots, celery"
+replacementdict["garlic"] = "onion"
+replacementdict["onions"] = "shallots, leeks, scallions"
+replacementdict["oil"] = "can be replaced with ghee, butter, or various other oils such as canola, avocado, olive, and coconut"
+replacementdict["vegetarian"] = "meats may be replaced with other meats, veggie/bean patties, seitan, lentils, and tofu"
 #htmldata = getdata("https://www.allrecipes.com/recipe/24771/basic-mashed-potatoes/")
 #htmldata = getdata("https://www.allrecipes.com/recipe/8493351/grain-free-broccoli-fritters/") 
 #htmldata = getdata("https://www.allrecipes.com/recipe/79543/fried-rice-restaurant-style/")
@@ -128,6 +144,7 @@ def ingredient_info(ingredients):
         ingredient_dict[ingredient] = [quant, unit, prep]
     return ingredient_dict
 
+
 def plural(ingredient):
     if len(ingredient.split()) == 0:
         if nlp(ingredient)[0].tag_ == 'NN': # singular
@@ -142,22 +159,30 @@ def plural(ingredient):
             return ingredient[0:len(ingredient)-1]
     return ingredient
 
+
+def has_kw(question):
+    kw = ['time','how long','temperature','degrees','amount','how much','how many','prep','tool','utensil','done','know']
+    if question.__contains__("use") and question.__contains__("what"):
+        return True
+    for w in kw:
+        if question.__contains__(w):
+            return True
+    return False
+
 def ingredient_questions(question,step,curr_ingr):
     units = ['cup', 'cups', 'ml', 'mls', 'liters', 'L', 'ounces', 'oz', 'lb', 'lbs', 'pounds', 'pound', 'teaspoon', 'teaspoons', 'tsp', 'tablespoon', 'tablespoons', 'tbsp']
     question = question.lower()
+    step = step.lower()
     ingredient_dict = ingredient_info(ingredients)
     quant = False 
     time = False
+    temp = False
+    tool = False
+    done = False
     kw = ''
-    if question.__contains__("double"):
-        kw = "factor"
-        factor = 2
-    elif question.__contains__("triple"):
-        kw = "factor"
-        factor = 3
-    elif question.__contains__("time") or question.__contains__("how long"):
+    if question.__contains__("time") or question.__contains__("how long") or question.__contains__("minutes"):
         time = True
-    elif question.__contains__("temperature"):
+    elif question.__contains__("temperature") or question.__contains__("degrees"):
         temp = True
     elif question.__contains__("amount"):
         quant = True
@@ -169,67 +194,207 @@ def ingredient_questions(question,step,curr_ingr):
         kw = "how many"
     elif question.__contains__("prep"):
         kw = "prep"
-    if time:
-        if step.__contains__("mins"):
-            time = ''
-            if step.__contains__("hour"):
-                timeindex = step.split().index("hour")
-                time = str(step.split()[timeindex-1]) + " hour, "
-            index = step.split().index("mins") - 1
-            while index > -1:
-                try:
-                    num = step.split()[index]
-                    f = float(num)
-                    time = time + num + " minutes"
-                    break
-                except:
-                    index = index - 1
-            print(time)
-            return ''
-        elif step.__contains__("minutes"):
-            time = ''
-            if step.__contains__("hour"):
-                timeindex = step.split().index("hour")
-                time = str(step.split()[timeindex-1]) + " hour, "
-            index = step.split().index("minutes") - 1
-            while index > -1:
-                try:
-                    num = step.split()[index]
-                    f = float(num)
-                    time = time + num + " minutes"
-                    break
-                except:
-                    print("exception")
-                    index = index - 1
-            print(time)
-            return ''
-        elif step.__contains__("min"):
-            time = ''
-            if step.__contains__("hour"):
-                timeindex = step.split().index("hour")
-                time = str(step.split()[timeindex-1]) + " hour, "
-            index = step.split().index("min") - 1
-            while index > -1:
-                try:
-                    num = step.split()[index]
-                    f = float(num)
-                    time = time + num + " minutes"
-                    break
-                except:
-                    index = index - 1
-            print(time)
-            return ''
+    elif question.__contains__("tool") or question.__contains__("utensil") or (question.__contains__("use") and question.__contains__("what")):
+        tool = True
+    elif question.__contains__("done") or question.__contains__("know"):
+        done = True
+    if done:
+        if step.__contains__("until"):
+            index = step.split().index("until") + 1
+            total = 'It is done when'
+            while index < len(step.split()):
+                word = step.split()[index]
+                if word[len(word)-1] == ',':
+                    return ['',total+ ' ' + word[0:len(word)-1]]
+                total = total + ' ' + word
+                index = index + 1
+            return ['',total]
+        '''
+        elif step.__contains__("when"):
+            index = step.split().index("when") + 1
+            total = 'It is done when'
+            while index < len(step.split()):
+                word = step.split()[index]
+                if word[len(word)-1] == ',':
+                    return ['',total+ ' ' + word[0:len(word)-1]]
+                total = total + ' ' + word
+                index = index + 1
+            return ['',total]
+        '''
+        return ['',"I'm not sure if your question applies to this step"]
+    if tool:
+        if step.__contains__("when"):
+            index = step.split().index("when") + 1
+            total = 'It is done when'
+            while index < len(step.split()):
+                word = step.split()[index]
+                total = total + ' ' + word
+                if word[len(word)-1] == ',':
+                    return ['',total]
+                index = index + 1
+            return ['',total]
+    if tool:
+        if step.__contains__("use"):
+            try:
+                index = step.split().index("use") + 1
+            except: 
+                index = step.split().index("using") + 1
+            total = 'You should use'
+            while index < len(step.split()):
+                word = step.split()[index]
+                if word == 'until':
+                    return ['',total]
+                total = total + ' ' + word
+                if word[len(word)-1] == ',':
+                    return ['',total]
+                index = index + 1
+            return ['',total]
+        elif step.__contains__("with"):
+            index = step.split().index("with") + 1
+            total = 'You should use'
+            while index < len(step.split()):
+                word = step.split()[index]
+                if word == 'until':
+                    return ['',total]
+                total = total + ' ' + word
+                if word[len(word)-1] == ',':
+                    return ['',total]
+                index = index + 1
+            return ['',total]
         else:
-            print("This step does not provide a time")
-            return ''
+            return ['',"There are no tools used in this step"]
+    if temp:
+        unit = ''
+        if step.split().__contains__("f") or step.split().__contains__("fahrenheit"):
+            unit = "Fahrenheit"
+        elif step.split().__contains__("c") or step.split().__contains__("celsius"):
+            unit = "Celsius"
+        for word in step.split():
+            try:
+                f = float(word)
+                if int(word) > 50:
+                    stri = word + ' degrees ' + unit
+                    return ['',stri]
+            except:
+                continue
+        return ['',"This step does not provide a temperature"]
+    if time:
+        hasmin = False
+        if step.__contains__("for"):
+            index = step.split().index("for") + 1
+            time = "for"
+            while index < len(step.split()):
+                word = step.split()[index]
+                time = time + ' ' + word
+                index = index + 1
+                if word[len(word)-1] == ',':
+                    return ['',time[0:len(time)-1]]
+                if word.__contains__('hour'):
+                    if not step.__contains__('min'):
+                        return ['',time]
+                    else:
+                        continue
+                if word.__contains__('min'):
+                    return ['',time]  
+        elif step.__contains__("mins"):
+            kw = "mins"
+            hasmin = True
+            try:
+                index = step.split().index("mins") - 1
+            except:
+                if step.__contains__("mins,"):
+                    index = step.split().index("mins,") - 1
+                elif step.__contains__("mins."):
+                    index = step.split().index("mins.") - 1
+        elif step.__contains__("minutes"):
+            kw = "minutes"
+            hasmin = True
+            try:
+                index = step.split().index("minutes") - 1
+            except:
+                if step.__contains__("minutes,"):
+                    index = step.split().index("minutes,") - 1
+                elif step.__contains__("minutes."):
+                    index = step.split().index("minutes.") - 1  
+        elif step.__contains__("minute"):
+            kw = "minute"
+            hasmin = True
+            try:
+                index = step.split().index("minute") - 1
+            except:
+                if step.__contains__("minute,"):
+                    index = step.split().index("minute,") - 1
+                elif step.__contains__("minute."):
+                    index = step.split().index("minute.") - 1 
+        elif step.__contains__("min"):
+            kw = "min"
+            hasmin = True
+            try:
+                index = step.split().index("min") - 1
+            except:
+                if step.__contains__("min,"):
+                    index = step.split().index("min,") - 1
+                elif step.__contains__("min."):
+                    index = step.split().index("min.") - 1 
+        elif step.__contains__("hours"):
+            kw = "hours"
+            try:
+                index = step.split().index("hours") - 1
+            except:
+                if step.__contains__("hours,"):
+                    index = step.split().index("hours,") - 1
+                elif step.__contains__("hours."):
+                    index = step.split().index("hours.") - 1 
+        elif step.__contains__("hour"):
+            kw = "hour"
+            try:
+                index = step.split().index("hour") - 1
+            except:
+                if step.__contains__("hour,"):
+                    index = step.split().index("hour,") - 1
+                elif step.__contains__("hour."):
+                    index = step.split().index("hour.") - 1 
+        elif step.__contains__("until"):
+            index = step.split().index("until") + 1
+            total = 'Until'
+            while index < len(step.split()):
+                word = step.split()[index]
+                if nlp(word[len(word)-1])[0].pos_ == 'PUNCT':
+                    total = total + ' ' + word
+                    return ['',total]
+                total = total + ' ' + word
+                index = index + 1
+            return ['',total]
+        else:
+            return ['',"This step does not provide a time"]
+        time = ''
+        if step.__contains__("hours") and hasmin:
+            timeindex = step.split().index("hours")
+            time = str(step.split()[timeindex-1]) + " hours, "
+        elif step.__contains__("hour") and hasmin:
+            timeindex = step.split().index("hour")
+            time = str(step.split()[timeindex-1]) + " hour, "
+        while index > -1:
+            try:
+                num = step.split()[index]
+                f = float(num)
+                time = time + num + " " + kw
+                index = index - 1
+                break
+            except:
+                index = index - 1
+        if step.split()[index] == 'or':
+            time = step.split()[index-1] + ' or ' + time
+        elif step.split()[index] == 'to':
+            time = step.split()[index-1] + ' to ' + time
+        return ['',time]  
     if quant:
         split_q = question.split()
         if kw == "how many":
             index = split_q.index("many")  
             if len(split_q) < 3:
                 if curr_ingr == '':
-                    print("Please specify the ingredient")
-                    return ''
+                    return ['',"Please specify the ingredient"]
                 find_kw = curr_ingr
                 for ingredient in ingredient_dict:
                     if ingredient == find_kw:
@@ -240,8 +405,8 @@ def ingredient_questions(question,step,curr_ingr):
                             t1 = ''
                             t2 = ' '
                         curr_ingr = ingredient
-                        print("You need " + lst[0] + t1 + lst[1] + t2 + ingredient)
-                        return curr_ingr                     
+                        stri = "You need " + lst[0] + t1 + lst[1] + t2 + ingredient
+                        return [curr_ingr,stri]               
             find_ingr = split_q[index+1]
             if find_ingr in units:
                 if split_q[index+2] == 'of':
@@ -252,8 +417,8 @@ def ingredient_questions(question,step,curr_ingr):
             index = split_q.index("much")
             if len(split_q) < 3:
                 if curr_ingr == '':
-                    print("Please specify the ingredient")
-                    return ''
+                    stri = "Please specify the ingredient"
+                    return ['',stri]
                 find_kw = curr_ingr
                 for ingredient in ingredient_dict:
                     if ingredient == find_kw:
@@ -264,8 +429,8 @@ def ingredient_questions(question,step,curr_ingr):
                             t1 = ''
                             t2 = ' '
                         curr_ingr = ingredient
-                        print("You need " + lst[0] + t1 + lst[1] + t2 + ingredient)
-                        return curr_ingr
+                        stri = "You need " + lst[0] + t1 + lst[1] + t2 + ingredient
+                        return [curr_ingr,stri]
             find_ingr = split_q[index+1]
             if find_ingr == 'of':
                 find_ingr = split_q[index+2]
@@ -286,7 +451,7 @@ def ingredient_questions(question,step,curr_ingr):
                 curr_ingr = ingredient
                 print("You need " + lst[0] + t1 + lst[1] + t2 + ingredient)
             if counter != 0:
-                return curr_ingr
+                return [curr_ingr,1]
         for ingredient in ingredient_dict:
             if question.__contains__(ingredient) or question.__contains__(plural(ingredient)): # check if question contains entire ingredient name
                 lst = ingredient_dict[ingredient]
@@ -296,8 +461,8 @@ def ingredient_questions(question,step,curr_ingr):
                     t1 = ''
                     t2 = ' '
                 curr_ingr = ingredient
-                print("You need " + lst[0] + t1 + lst[1] + t2 + ingredient)
-                return curr_ingr
+                stri = "You need " + lst[0] + t1 + lst[1] + t2 + ingredient
+                return [curr_ingr,stri]
         for ingredient in ingredient_dict: 
             if len(ingredient.split()) > 1:
                 for element in ingredient.split():
@@ -309,8 +474,8 @@ def ingredient_questions(question,step,curr_ingr):
                             t1 = ''
                             t2 = ' '
                         curr_ingr = ingredient
-                        print("You need " + lst[0] + t1 + lst[1] + t2 + ingredient)
-                        return curr_ingr
+                        stri = "You need " + lst[0] + t1 + lst[1] + t2 + ingredient
+                        return [curr_ingr,stri]
                 if question.__contains__(plural(ingredient.split()[len(ingredient.split())-1])): # check if question contains plural version of noun part
                     lst = ingredient_dict[ingredient]
                     t1 = ' '
@@ -319,11 +484,11 @@ def ingredient_questions(question,step,curr_ingr):
                         t1 = ''
                         t2 = ' '
                     curr_ingr = ingredient
-                    print("You need " + lst[0] + t1 + lst[1] + t2 + ingredient)
-                    return curr_ingr
+                    stri = "You need " + lst[0] + t1 + lst[1] + t2 + ingredient
+                    return [curr_ingr,stri]
         if curr_ingr == '':
-            print("Please specify the ingredient")
-            return ''
+            stri = "Please specify the ingredient"
+            return ['',stri]
         find_kw = curr_ingr
         for ingredient in ingredient_dict:
             if ingredient == find_kw:
@@ -334,8 +499,8 @@ def ingredient_questions(question,step,curr_ingr):
                     t1 = ''
                     t2 = ' '
                 curr_ingr = ingredient
-                print("You need " + lst[0] + t1 + lst[1] + t2 + ingredient)
-                return curr_ingr           
+                stri = "You need " + lst[0] + t1 + lst[1] + t2 + ingredient
+                return [curr_ingr,stri]        
     if kw == "prep":
         for ingredient in ingredient_dict:
             if question.__contains__(ingredient) or question.__contains__(plural(ingredient)):
@@ -343,12 +508,12 @@ def ingredient_questions(question,step,curr_ingr):
                 verbs = lst[2]
                 if verbs == '':
                     curr_ingr = ingredient
-                    print('No prep needs to be done')
-                    return curr_ingr
+                    stri = 'No prep needs to be done'
+                    return [curr_ingr, stri]
                 else:
                     curr_ingr = ingredient
-                    print('The ' + ingredient + ' should be ' + verbs)
-                    return curr_ingr
+                    stri = 'The ' + ingredient + ' should be ' + verbs
+                    return [curr_ingr,stri]
         for ingredient in ingredient_dict:
             if len(ingredient.split()) > 1:
                 for element in ingredient.split():
@@ -361,22 +526,22 @@ def ingredient_questions(question,step,curr_ingr):
                             return curr_ingr
                         else:
                             curr_ingr = ingredient
-                            print('The ' + ingredient + ' should be ' + verbs)
-                            return curr_ingr
+                            stri = 'The ' + ingredient + ' should be ' + verbs
+                            return [curr_ingr,stri]
                 if question.__contains__(plural(ingredient.split()[len(ingredient.split())-1])):
                     lst = ingredient_dict[ingredient]
                     verbs = lst[2]
                     if verbs == '':
                         curr_ingr = ingredient
-                        print('No prep needs to be done')
-                        return curr_ingr
+                        stri = 'No prep needs to be done'
+                        return [curr_ingr, stri]
                     else:
                         curr_ingr = ingredient
-                        print('The ' + ingredient + ' should be ' + verbs)
-                        return curr_ingr
+                        stri = 'The ' + ingredient + ' should be ' + verbs
+                        return [curr_ingr,stri]
         if curr_ingr == '':
-            print("Please specify the ingredient")
-            return ''
+            stri = "Please specify the ingredient"
+            return ['',stri]
         find_kw = curr_ingr
         for ingredient in ingredient_dict:
             if ingredient == find_kw:
@@ -384,128 +549,14 @@ def ingredient_questions(question,step,curr_ingr):
                 verbs = lst[2]
                 if verbs == '':
                     curr_ingr = ingredient
-                    print('No prep needs to be done')
-                    return curr_ingr
+                    stri = 'No prep needs to be done'
+                    return [curr_ingr, stri]
                 else:
                     curr_ingr = ingredient
-                    print('The ' + ingredient + ' should be ' + verbs)
-                    return curr_ingr     
-    if kw == "factor":
-        find_ingr = []
-        for ingredient in ingredient_dict:
-            if question.__contains__(ingredient) or question.__contains__(plural(ingredient)):
-                find_ingr.append(ingredient)
-            elif len(ingredient.split()) > 1:
-                found = 0
-                for element in ingredient.split():
-                    if question.__contains__(element) and nlp(element)[0].pos_ == 'NOUN':
-                        find_ingr.append(ingredient)
-                        found = 1
-                        break
-                if not found and question.__contains__(plural(ingredient.split()[len(ingredient.split())-1])):
-                    find_ingr.append(ingredient)
-        if len(find_ingr) == 0:
-            response = []
-            for ingredient in ingredient_dict:
-                lst = ingredient_dict[ingredient]
-                quantity = multiply(lst[0],factor)
-                unit = lst[1]
-                prep = lst[2]
-                t1 = ' '
-                t2 = ' '
-                t3 = ', '
-                if unit == '':
-                    t1 = ''
-                    if quantity != '1' and nlp(ingredient[len(ingredient)-1])[0].tag_ == 'NN':#ingredient[len(ingredient)-1] != 's':
-                        ingredient = ingredient + 's'
-                else:
-                    if quantity != '1' and nlp(unit)[0].tag_ == 'NN':#unit[len(unit)-1] != 's':
-                        unit = unit + 's'
-                if prep == '':
-                    t3 = ''
-                curr_response = quantity + t1 + unit + t2 + ingredient + t3 + prep
-                response.append(curr_response)
-            for a_response in response:
-                print(a_response)
-            return ''
-        else:
-            response = []
-            for ingredient in find_ingr:
-                lst = ingredient_dict[ingredient]
-                quantity = multiply(lst[0],factor)
-                unit = lst[1]
-                t1 = ' '
-                t2 = ' '
-                if unit == '':
-                    t1 = ''
-                    if quantity != '1' and nlp(ingredient[len(ingredient)-1])[0].tag_ == 'NN':#ingredient[len(ingredient)-1] != 's':
-                        ingredient = ingredient + 's'
-                else:
-                    if quantity != '1' and nlp(unit)[0].tag_ == 'NN':#unit[len(unit)-1] != 's':
-                        unit = unit + 's'
-                print('You need ' + quantity + t1 + unit + t2 + ingredient)  
-            return ''  
-    return ''   
+                    stri = 'The ' + ingredient + ' should be ' + verbs
+                    return [curr_ingr,stri]    
+    return ['','']   
 
-def multiply(num,factor):
-    num = num.split()
-    if num.__contains__('or'):
-        for i in range(len(num)):
-            digit = num[i]
-            if digit != 'or':
-                try:
-                    converted = int(digit)
-                    mult = converted*factor
-                    num[i] = str(mult)
-                except:
-                    try:
-                        converted = float(digit)
-                        mult = converted*factor
-                        if str(mult)[len(str(mult))-2:len(str(mult))] == '.0':
-                            num[i] = str(mult)[0:len(str(mult))-2]
-                        else:
-                            num[i] = str(mult)
-                    except:
-                        if digit.__contains__('/'):
-                            middle_index = digit.index('/')
-                            dividend = int(digit[0:middle_index])
-                            divisor = int(digit[middle_index+1:len(digit)])
-                            quotient = factor*dividend/divisor
-                            if str(quotient)[len(str(quotient))-2:len(str(quotient))] == '.0':
-                                num[i] = str(quotient)[0:len(str(quotient))-2]
-                            else:
-                                num[i] = str(quotient)                            
-                        else:
-                            num[i] = digit
-        return ' '.join(num)
-    sum = 0
-    for digit in num:
-        try:
-            converted = int(digit)
-            mult = converted*factor
-            sum = sum + mult
-        except:
-            try:
-                converted = float(digit)
-                mult = converted*factor
-                sum = sum + mult 
-            except:
-                if digit.__contains__('/'):
-                    middle_index = digit.index('/')
-                    dividend = int(digit[0:middle_index])
-                    divisor = int(digit[middle_index+1:len(digit)])
-                    sum = sum + factor*dividend/divisor 
-                else:
-                    if sum == 0:
-                        sum = digit
-                    else:
-                        sum = str(sum) + digit
-    if len(str(sum).split()) > 1:
-        return ' '.join(str(sum))
-    else:
-        if len(str(sum)) > 2 and str(sum)[len(str(sum))-2:len(str(sum))] == '.0':
-            return str(sum)[0:len(str(sum))-2]
-        return str(sum)
 
 
 
@@ -523,9 +574,6 @@ while counter < len(steps):
     step = step.strip()
     steps[counter] = step
     counter+=1 
-  
-
-
 
 
 print("I see that you would like to make " + title[0:len(title)] + '.')
@@ -569,46 +617,77 @@ while(True):
             print ("step", str(stepI + 1) + ":", steps[stepI])
         else:
             print("There are no steps before this!")
-    
-    if "substitute" in inpt.lower() or "replace" in inpt.lower():
+
+    if "substitute" in inpt.lower() or "replace" in inpt.lower() or "substitution" in inpt.lower() or "replacement" in inpt.lower():
         newinpt = inpt.lower()
         newinpt = newinpt.split()
+        theingredient = ""
         flag = False
-        for word in newinpt:
-            if word in replacementdict:
-                print("Substitute", word, "with:")
-                print(replacementdict[word])
-                flag = True
-        if flag==False:
-            print("No replacements were found")
+        if newinpt.__contains__("cheese"):
+            print(replacementdict["cheese"])
+        elif newinpt.__contains__("oil"):
+            print(replacementdict["oil"])
+        elif newinpt.__contains__("turkey") or newinpt.__contains__("chicken") or newinpt.__contains__("beef") or newinpt.__contains__("pork"):
+            print(replacementdict["vegetarian"])
+        else:
+            for word in newinpt:
+                if flag==True:
+                    theingredient+=word
+                    theingredient+=" "
+                if newinpt.__contains__("for"):
+                    if word=="for":
+                        flag = True
+                else:
+                    if word == "replace" or word=="substitute":
+                        flag = True
+            
+            theingredient = theingredient[:-1]
+            flag = False
+            if theingredient in replacementdict:
+                    print("Substitute", theingredient, "with:")
+                    print(replacementdict[theingredient])
+                    flag = True
+            if flag==False:
+                print("No replacements were found")
+
+    flag = 0
+    if has_kw(inpt.lower()):
+        output = ingredient_questions(inpt,steps[stepI],curr_ingr)
+        if output[1] != None and output[1] != '' and output[1] != 1:
+            print(output[1])
+            flag = 1
+        if output[1]:
+            flag = 1
+        curr_ingr = output[0]
+
+
 #https://www.allrecipes.com/recipe/24771/basic-mashed-potatoes/
-    if ("how do i" in inpt.lower() or "how do you" in inpt.lower()) and "do that" not in inpt.lower():
-        myUrl = "https://www.youtube.com/results?search_query="
-        sentArr = inpt.split()
-        for i in range(len(sentArr)):
-            myUrl = myUrl + sentArr[i]
-            if i != len(sentArr) - 1:
-                myUrl = myUrl + "+"
-        print("This may help you!")
-        print(myUrl)
-    elif "how" in inpt.lower() or "how do i do that" in inpt.lower():
-        myUrl = "https://www.youtube.com/results?search_query="
-        stepArr = steps[stepI].split()
-        for i in range(len(stepArr)):
-            myUrl = myUrl + stepArr[i]
-            if i != len(stepArr) - 1:
-                myUrl = myUrl + "+"
-        print("This may help you!")
-        print(myUrl)
-    if "what is" in inpt.lower():
-        myUrl = "https://www.google.com/search?q="
-        sentArr = inpt.split()
-        for i in range(len(sentArr)):
-            myUrl = myUrl + sentArr[i]
-            if i != len(sentArr) - 1:
-                myUrl = myUrl + "+"
-        print("This may help you!")
-        print(myUrl)
-    else:
-        new_curr_ingr = ingredient_questions(inpt,steps[stepI],curr_ingr)
-        curr_ingr = new_curr_ingr
+#https://www.allrecipes.com/recipe/8493351/grain-free-broccoli-fritters/
+    if not flag:
+        if ("how do i" in inpt.lower() or "how do you" in inpt.lower()) and "do that" not in inpt.lower():
+            myUrl = "https://www.youtube.com/results?search_query="
+            sentArr = inpt.split()
+            for i in range(len(sentArr)):
+                myUrl = myUrl + sentArr[i]
+                if i != len(sentArr) - 1:
+                    myUrl = myUrl + "+"
+            print("This may help you!")
+            print(myUrl)
+        elif "how" in inpt.lower() or "how do i do that" in inpt.lower():
+            myUrl = "https://www.youtube.com/results?search_query="
+            stepArr = steps[stepI].split()
+            for i in range(len(stepArr)):
+                myUrl = myUrl + stepArr[i]
+                if i != len(stepArr) - 1:
+                    myUrl = myUrl + "+"
+            print("This may help you!")
+            print(myUrl)
+        if "what is" in inpt.lower():
+            myUrl = "https://www.google.com/search?q="
+            sentArr = inpt.split()
+            for i in range(len(sentArr)):
+                myUrl = myUrl + sentArr[i]
+                if i != len(sentArr) - 1:
+                    myUrl = myUrl + "+"
+            print("This may help you!")
+            print(myUrl)
