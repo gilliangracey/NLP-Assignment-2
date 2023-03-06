@@ -730,7 +730,7 @@ while(True):
                     myUrl = myUrl + "+"
             print("This may help you!")
             print(myUrl)
-        if "what do i" in inpt.lower() or "what should i" in inpt.lower():
+        if "what do i" in inpt.lower() or "what should i" in inpt.lower() or "how should i" in inpt.lower():
             tagged = nlp(inpt.lower())
             curdir = steps[stepI]
             taggeddir = nlp(curdir)
@@ -750,7 +750,7 @@ while(True):
                 obj = obj.lower()
                 if curdir.__contains__(obj):
                     flag = True
-            if len(verbsacting) == 0 or flag == False:
+            if len(verbsacting) == 0 or flag == False or len(dirobjects)<1:
                 print("Sorry, the answer to your question is not in the current step")
             elif len(verbsacting) == 1:
                 theverb = str(verbsacting[0])
