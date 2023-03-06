@@ -54,11 +54,6 @@ replacementdict["garlic"] = "onion"
 replacementdict["onions"] = "shallots, leeks, scallions"
 replacementdict["oil"] = "can be replaced with ghee, butter, or various other oils such as canola, avocado, olive, and coconut"
 replacementdict["vegetarian"] = "meats may be replaced with other meats, veggie/bean patties, seitan, lentils, and tofu"
-#htmldata = getdata("https://www.allrecipes.com/recipe/24771/basic-mashed-potatoes/")
-#htmldata = getdata("https://www.allrecipes.com/recipe/8493351/grain-free-broccoli-fritters/") 
-#htmldata = getdata("https://www.allrecipes.com/recipe/79543/fried-rice-restaurant-style/")
-#htmldata = getdata("https://www.allrecipes.com/recipe/60923/portobello-mushroom-stroganoff/")
-#htmldata = getdata("https://www.foodnetwork.com/recipes/ina-garten/meat-loaf-recipe-1921718")
 
 
 def print_ingredients():
@@ -97,7 +92,6 @@ def ingredient_info(ingredients):
                 quant = split_str[0:2]
                 i = 2
         unit = ''
-        # account for words between quant & units
         while split_str[i] in units:
             if unit == '':
                 unit = unit + split_str[i]
@@ -227,7 +221,7 @@ def ingredient_questions(question,step,curr_ingr):
                     return ['',total[0:len(total)-1]]
                 index = index + 1
             return ['',total]
-        elif step.__contains__("with"):
+        elif step.__contains__("with a") or step.__contains__("with the"):
             index = step.split().index("with") + 1
             total = 'You should use'
             while index < len(step.split()):
@@ -239,7 +233,19 @@ def ingredient_questions(question,step,curr_ingr):
                     return ['',total[0:len(total)-1]]
                 index = index + 1
             return ['',total]
-        elif step.__contains__("in a"):
+        elif step.__contains__("into the") or step.__contains__("into a"):
+            index = step.split().index("into") + 1
+            total = 'You should use'
+            while index < len(step.split()):
+                word = step.split()[index]
+                if word == 'until' or word == 'of' or word == 'and' or word == 'over':
+                    return ['',total]
+                total = total + ' ' + word
+                if word[len(word)-1] == ',' or word[len(word)-1] == ';':
+                    return ['',total[0:len(total)-1]]
+                index = index + 1
+            return ['',total]
+        elif step.__contains__("in a") or step.__contains__("in the"):
             index = step.split().index("in") + 1
             total = 'You should use'
             while index < len(step.split()):
@@ -251,7 +257,7 @@ def ingredient_questions(question,step,curr_ingr):
                     return ['',total[0:len(total)-1]]
                 index = index + 1
             return ['',total]
-        elif step.__contains__("to a"):
+        elif step.__contains__("to a") or step.__contains__("to the"):
             index = step.split().index("to") + 1
             total = 'You should use'
             while index < len(step.split()):
@@ -270,6 +276,18 @@ def ingredient_questions(question,step,curr_ingr):
             unit = "Fahrenheit"
         elif step.split().__contains__("c") or step.split().__contains__("celsius"):
             unit = "Celsius"
+        elif step.__contains__("°"):
+            num = '°'
+            index = step.index('°') - 1
+            while index > 0:
+                try:
+                    curr = step[index]
+                    f = float(curr)
+                    num = curr + num
+                    index = index - 1
+                except:
+                    return ['',num]
+            return ['',num]
         elif step.__contains__("heat"):
             step = step.split()
             index = step.index("heat")
@@ -464,7 +482,7 @@ def ingredient_questions(question,step,curr_ingr):
                 find_ingr = split_q[index+2]
         counter = 0
         mult_ingrs = []
-        if nlp(find_ingr)[0].pos_ == 'NOUN' or nlp(find_ingr)[0].pos_ == 'PROPN': # check if word after kw is ingredient name 
+        if nlp(find_ingr)[0].pos_ == 'NOUN' or nlp(find_ingr)[0].pos_ == 'PROPN':
             for ingredient in ingredient_dict:
                 if ingredient.__contains__(find_ingr):
                     counter = counter + 1
@@ -481,7 +499,7 @@ def ingredient_questions(question,step,curr_ingr):
             if counter != 0:
                 return [curr_ingr,1]
         for ingredient in ingredient_dict:
-            if question.__contains__(ingredient) or question.__contains__(plural(ingredient)): # check if question contains entire ingredient name
+            if question.__contains__(ingredient) or question.__contains__(plural(ingredient)):
                 lst = ingredient_dict[ingredient]
                 t1 = ' '
                 t2 = ' of '
@@ -494,7 +512,7 @@ def ingredient_questions(question,step,curr_ingr):
         for ingredient in ingredient_dict: 
             if len(ingredient.split()) > 1:
                 for element in ingredient.split():
-                    if question.__contains__(element) and nlp(element)[0].pos_ == 'NOUN': # check if question contains noun part of ingredient name
+                    if question.__contains__(element) and nlp(element)[0].pos_ == 'NOUN':
                         lst = ingredient_dict[ingredient]
                         t1 = ' '
                         t2 = ' of '
@@ -504,7 +522,7 @@ def ingredient_questions(question,step,curr_ingr):
                         curr_ingr = ingredient
                         stri = "You need " + lst[0] + t1 + lst[1] + t2 + ingredient
                         return [curr_ingr,stri]
-                if question.__contains__(plural(ingredient.split()[len(ingredient.split())-1])): # check if question contains plural version of noun part
+                if question.__contains__(plural(ingredient.split()[len(ingredient.split())-1])):
                     lst = ingredient_dict[ingredient]
                     t1 = ' '
                     t2 = ' of '
@@ -548,7 +566,7 @@ def ingredient_questions(question,step,curr_ingr):
         for ingredient in ingredient_dict:
             if len(ingredient.split()) > 1:
                 for element in ingredient.split():
-                    if question.__contains__(element) and nlp(element)[0].pos_ == 'NOUN': # permit VERB too
+                    if question.__contains__(element) and nlp(element)[0].pos_ == 'NOUN':
                         lst = ingredient_dict[ingredient]
                         verbs = lst[2]
                         if verbs == '':
@@ -591,8 +609,74 @@ def ingredient_questions(question,step,curr_ingr):
                     return [curr_ingr,stri]    
     return ['','']   
 
-
-
+def cooking_action(question,curdir):
+    tagged = nlp(question)
+    taggeddir = nlp(curdir)
+    dirobjects = []
+    verbsacting = []
+    for tag in tagged:
+        if tag.tag_ == "NN" or tag.tag_ == "NNS" or tag.tag_ == "NNP":
+            dirobjects.append(tag)
+    for tag in taggeddir:
+        if tag.tag_=="VB" or tag.tag_ == "VBS" or tag.tag_ == "VBP":
+            verbsacting.append(tag)
+    answer = ""
+    flag = False
+    for theobjects in dirobjects:
+        obj = str(theobjects)
+        curdir = curdir.lower()
+        obj = obj.lower()
+        if curdir.__contains__(obj):
+            flag = True
+    if len(verbsacting) == 0 or flag == False or len(dirobjects) == 0:
+        print("Sorry, the answer to your question is not in the current step")
+        return
+    elif len(verbsacting) == 1:
+        theverb = str(verbsacting[0])
+        answer += theverb
+        answer+= " "
+    else:
+        counter = 0
+        for verb in verbsacting:
+            theverb = str(verb)
+            if counter==len(verbsacting)-1:
+                answer+="and"
+                answer+=" "
+                answer+=theverb
+                answer+=" "
+            else:
+                answer+=theverb
+                answer+=", "
+            counter+=1
+    if len(dirobjects)>1 or str(dirobjects[0])[-1]=="s":
+        if len(dirobjects)==2:
+            ingredient = ""
+            for word in dirobjects:
+                word = str(word)
+                ingredient+=word
+                ingredient+= " "
+            ingredient = ingredient[:-1]
+            sflag = False
+            for ingr in ingredients:
+                if ingredient in ingr:
+                    sflag = True
+            if sflag == True:
+                answer+="it"
+            elif flag==True:  
+                answer+="them"
+            else:
+                answer = ""
+        else:
+            if flag==True:  
+                answer+="them"
+            else:
+                answer = ""
+    elif flag==True:
+        answer+="it"
+    else:
+        answer = ""
+    print(answer)
+    return
 
 print("My name is KitchenBot and I am here to help you understand the recipe you would like to make. \nAt any point, you may enter 'ingredients' to view the ingredients list or 'directions' to navigate the recipe's directions.")
 url = input("Please enter the URL of a recipe: ")
@@ -639,11 +723,11 @@ while(True):
         print_ingredients()
 
     if "directions" in inpt.lower():
-        print("These are the directions. Type next and back or simply type a number to navigate the steps!")
+        print("These are the directions. Type 'next' or 'back' or simply type a number to navigate the steps!")
         print("step 1:", steps[0])
 
     if "next" in inpt.lower():
-        if stepI < len(steps) - 1:
+        if stepI < len(steps) - 2:
             stepI += 1
             curr_ingr = ''
             print ("step", str(stepI + 1) + ":", steps[stepI])
@@ -700,9 +784,6 @@ while(True):
             flag = 1
         curr_ingr = output[0]
 
-
-#https://www.allrecipes.com/recipe/24771/basic-mashed-potatoes/
-#https://www.allrecipes.com/recipe/8493351/grain-free-broccoli-fritters/
     if not flag:
         if ("how do i" in inpt.lower() or "how do you" in inpt.lower()) and "do that" not in inpt.lower():
             sentArr = inpt.split()
@@ -732,70 +813,4 @@ while(True):
             print("This may help you!")
             print(myUrl)
         if "what do i" in inpt.lower() or "what should i" in inpt.lower() or "how should i" in inpt.lower():
-            tagged = nlp(inpt.lower())
-            curdir = steps[stepI]
-            taggeddir = nlp(curdir)
-            dirobjects = []
-            verbsacting = []
-            for tag in tagged:
-                if tag.tag_ == "NN" or tag.tag_ == "NNS" or tag.tag_ == "NNP":
-                    dirobjects.append(tag)
-            for tag in taggeddir:
-                if tag.tag_=="VB" or tag.tag_ == "VBS" or tag.tag_ == "VBP":
-                    verbsacting.append(tag)
-            answer = ""
-            flag = False
-            for theobjects in dirobjects:
-                obj = str(theobjects)
-                curdir = curdir.lower()
-                obj = obj.lower()
-                if curdir.__contains__(obj):
-                    flag = True
-            if len(verbsacting) == 0 or flag == False or len(dirobjects)<1:
-                print("Sorry, the answer to your question is not in the current step")
-            elif len(verbsacting) == 1:
-                theverb = str(verbsacting[0])
-                answer += theverb
-                answer+= " "
-            else:
-                counter = 0
-                for verb in verbsacting:
-                    theverb = str(verb)
-                    if counter==len(verbsacting)-1:
-                        answer+="and"
-                        answer+=" "
-                        answer+=theverb
-                        answer+=" "
-                    else:
-                        answer+=theverb
-                        answer+=", "
-                    counter+=1
-            if len(dirobjects)>1 or str(dirobjects[0])[-1]=="s":
-                if len(dirobjects)==2:
-                    ingredient = ""
-                    for word in dirobjects:
-                        word = str(word)
-                        ingredient+=word
-                        ingredient+= " "
-                    ingredient = ingredient[:-1]
-                    sflag = False
-                    for ingr in ingredients:
-                        if ingredient in ingr:
-                            sflag = True
-                    if sflag == True:
-                        answer+="it"
-                    elif flag==True:  
-                        answer+="them"
-                    else:
-                        answer = ""
-                else:
-                    if flag==True:  
-                        answer+="them"
-                    else:
-                        answer = ""
-
-            elif flag==True:
-                answer+="it"
-            else:
-                answer = ""
-            print(answer)
+            cooking_action(inpt.lower(),steps[stepI])
