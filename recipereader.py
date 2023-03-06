@@ -7,7 +7,6 @@ from fractions import Fraction
 from recipe_scrapers import scrape_me
 nlp = spacy.load("en_core_web_sm")
   
-
 # link for extract html data 
 def getdata(url): 
     r = requests.get(url) 
@@ -155,7 +154,7 @@ def plural(ingredient):
 
 
 def has_kw(question):
-    kw = ['time','how long','temperature','degrees','amount','how much','how many','prep','tool','utensil','done','know']
+    kw = ['time','how long','temperature','degrees','amount','how much','how many','prep','tool','utensil','done','know','when','stop']
     if question.__contains__("use") and question.__contains__("what"):
         return True
     for w in kw:
@@ -191,11 +190,21 @@ def ingredient_questions(question,step,curr_ingr):
         prep = True
     elif question.__contains__("tool") or question.__contains__("utensil") or (question.__contains__("use") and question.__contains__("what")):
         tool = True
-    elif question.__contains__("done") or question.__contains__("know"):
+    elif question.__contains__("done") or question.__contains__("know") or question.__contains__("when") or question.__contains__("stop"):
         done = True
     if done:
         if step.__contains__("until"):
             index = step.split().index("until") + 1
+            total = 'It is done when'
+            while index < len(step.split()):
+                word = step.split()[index]
+                if word[len(word)-1] == ',' or word[len(word)-1] == ';':
+                    return ['',total+ ' ' + word[0:len(word)-1]]
+                total = total + ' ' + word
+                index = index + 1
+            return ['',total]
+        elif step.__contains__("once"):
+            index = step.split().index("once") + 1
             total = 'It is done when'
             while index < len(step.split()):
                 word = step.split()[index]
@@ -217,8 +226,9 @@ def ingredient_questions(question,step,curr_ingr):
                 if word == 'until' or word == 'to' or word == 'and':
                     return ['',total]
                 total = total + ' ' + word
-                if word[len(word)-1] == ',' or word[len(word)-1] == ';':
-                    return ['',total[0:len(total)-1]]
+                if len(word) > 1:
+                    if (word[len(word)-1] == ',' or word[len(word)-1] == ';') and nlp(word[0:len(word)-1])[0].pos_ != 'ADJ':
+                        return ['',total[0:len(total)-1]]
                 index = index + 1
             return ['',total]
         elif step.__contains__("with a") or step.__contains__("with the"):
@@ -229,8 +239,9 @@ def ingredient_questions(question,step,curr_ingr):
                 if word == 'until' or word == 'to' or word == 'and':
                     return ['',total]
                 total = total + ' ' + word
-                if word[len(word)-1] == ',' or word[len(word)-1] == ';':
-                    return ['',total[0:len(total)-1]]
+                if len(word) > 1:
+                    if (word[len(word)-1] == ',' or word[len(word)-1] == ';') and nlp(word[0:len(word)-1])[0].pos_ != 'ADJ':
+                        return ['',total[0:len(total)-1]]
                 index = index + 1
             return ['',total]
         elif step.__contains__("into the") or step.__contains__("into a"):
@@ -241,8 +252,9 @@ def ingredient_questions(question,step,curr_ingr):
                 if word == 'until' or word == 'of' or word == 'and' or word == 'over':
                     return ['',total]
                 total = total + ' ' + word
-                if word[len(word)-1] == ',' or word[len(word)-1] == ';':
-                    return ['',total[0:len(total)-1]]
+                if len(word) > 1:
+                    if (word[len(word)-1] == ',' or word[len(word)-1] == ';') and nlp(word[0:len(word)-1])[0].pos_ != 'ADJ':
+                        return ['',total[0:len(total)-1]]
                 index = index + 1
             return ['',total]
         elif step.__contains__("in a") or step.__contains__("in the"):
@@ -253,8 +265,9 @@ def ingredient_questions(question,step,curr_ingr):
                 if word == 'until' or word == 'of' or word == 'and' or word == 'over':
                     return ['',total]
                 total = total + ' ' + word
-                if word[len(word)-1] == ',' or word[len(word)-1] == ';':
-                    return ['',total[0:len(total)-1]]
+                if len(word) > 1:
+                    if (word[len(word)-1] == ',' or word[len(word)-1] == ';') and nlp(word[0:len(word)-1])[0].pos_ != 'ADJ':
+                        return ['',total[0:len(total)-1]]
                 index = index + 1
             return ['',total]
         elif step.__contains__("to a") or step.__contains__("to the"):
@@ -265,8 +278,9 @@ def ingredient_questions(question,step,curr_ingr):
                 if word == 'until' or word == 'of' or word == 'and' or word == 'over':
                     return ['',total]
                 total = total + ' ' + word
-                if word[len(word)-1] == ',' or word[len(word)-1] == ';':
-                    return ['',total[0:len(total)-1]]
+                if len(word) > 1:
+                    if word[len(word)-1] == ',' or word[len(word)-1] == ';' and nlp(word[0:len(word)-1])[0].pos_ != 'ADJ':
+                        return ['',total[0:len(total)-1]]
                 index = index + 1
             return ['',total]
         return ['',"There are no tools used in this step"]
@@ -290,15 +304,21 @@ def ingredient_questions(question,step,curr_ingr):
             return ['',num]
         elif step.__contains__("heat"):
             step = step.split()
-            index = step.index("heat")
+            try:
+                index = step.index("heat")
+            except:
+                try:
+                    index = step.index("heat,")
+                except:
+                    index = step.index("heat;")
             if index > 3:
                 if step[index-2] == 'or' or step[index-2] == 'to':
-                    stri = ' '.join(step[index-3:index+1])
+                    stri = 'You should cook it on ' + ' '.join(step[index-3:index]) + ' heat'
                     return ['',stri]
                 else:
-                    stri = ' '.join(step[index-1:index+1])
+                    stri = 'You should cook it on ' + ' '.join(step[index-1:index]) + ' heat'
                     return ['',stri]
-            stri = 'You should cook it on ' + ' '.join(step[index-1:index+1])
+            stri = 'You should cook it on ' + ' '.join(step[index-1:index]) + ' heat'
             return ['',stri]
         for word in step.split():
             try:
@@ -310,10 +330,12 @@ def ingredient_questions(question,step,curr_ingr):
                 continue
         return ['',"This step does not provide a temperature"]
     if time:
+        iloc = question.split().index('i')
+        pre = 'You should ' + question.split()[iloc+1] + ' for '
         hasmin = False
         if step.__contains__("for"):
             index = step.split().index("for") + 1
-            time = "for"
+            time = ''
             while index < len(step.split()):
                 word = step.split()[index]
                 time = time + ' ' + word
@@ -331,7 +353,7 @@ def ingredient_questions(question,step,curr_ingr):
                     else:
                         continue
                 if word.__contains__('sec'):
-                    return ['',time]
+                    return ['',pre+time]
             return ['',time]
         elif step.__contains__("mins"):
             kw = "mins"
@@ -401,16 +423,18 @@ def ingredient_questions(question,step,curr_ingr):
                 elif step.__contains__("hour."):
                     index = step.split().index("hour.") - 1 
         elif step.__contains__("until"):
+            if pre != '':
+                pre = pre[0:len(pre)-4]
             index = step.split().index("until") + 1
-            total = 'Until'
+            total = 'until'
             while index < len(step.split()):
                 word = step.split()[index]
                 if nlp(word[len(word)-1])[0].pos_ == 'PUNCT':
                     total = total + ' ' + word
-                    return ['',total]
+                    return ['',pre+total]
                 total = total + ' ' + word
                 index = index + 1
-            return ['',total]
+            return ['',pre+total]
         else:
             return ['',"This step does not provide a time"]
         time = ''
@@ -433,7 +457,7 @@ def ingredient_questions(question,step,curr_ingr):
             time = step.split()[index-1] + ' or ' + time
         elif step.split()[index] == 'to':
             time = step.split()[index-1] + ' to ' + time
-        return ['','For ' + time]  
+        return ['',pre+time]  
     if quant:
         split_q = question.split()
         if kw == "how many":
@@ -726,11 +750,14 @@ while(True):
         print("These are the directions. Type 'next' or 'back' or simply type a number to navigate the steps!")
         print("step 1:", steps[0])
 
+    if "repeat" in inpt.lower():
+        print("step", str(stepI) + ":", steps[stepI])
+
     if "next" in inpt.lower():
         if stepI < len(steps) - 2:
             stepI += 1
             curr_ingr = ''
-            print ("step", str(stepI + 1) + ":", steps[stepI])
+            print("step", str(stepI + 1) + ":", steps[stepI])
         else:
             print("There are no more steps!")
 
@@ -738,7 +765,7 @@ while(True):
         if stepI >= 1:
             stepI -= 1
             curr_ingr = ''
-            print ("step", str(stepI + 1) + ":", steps[stepI])
+            print("step", str(stepI + 1) + ":", steps[stepI])
         else:
             print("There are no steps before this!")
 
