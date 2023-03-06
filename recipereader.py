@@ -639,6 +639,7 @@ while(True):
         print_ingredients()
 
     if "directions" in inpt.lower():
+        print("These are the directions. Type next and back or simply type a number to navigate the steps!")
         print("step 1:", steps[0])
 
     if "next" in inpt.lower():
