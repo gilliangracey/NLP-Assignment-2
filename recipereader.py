@@ -205,23 +205,11 @@ def ingredient_questions(question,step,curr_ingr):
             total = 'It is done when'
             while index < len(step.split()):
                 word = step.split()[index]
-                if word[len(word)-1] == ',':
+                if word[len(word)-1] == ',' or word[len(word)-1] == ';':
                     return ['',total+ ' ' + word[0:len(word)-1]]
                 total = total + ' ' + word
                 index = index + 1
             return ['',total]
-        '''
-        elif step.__contains__("when"):
-            index = step.split().index("when") + 1
-            total = 'It is done when'
-            while index < len(step.split()):
-                word = step.split()[index]
-                if word[len(word)-1] == ',':
-                    return ['',total+ ' ' + word[0:len(word)-1]]
-                total = total + ' ' + word
-                index = index + 1
-            return ['',total]
-        '''
         return ['',"I'm not sure if your question applies to this step"]
     if tool:
         if step.__contains__("use"):
@@ -235,8 +223,8 @@ def ingredient_questions(question,step,curr_ingr):
                 if word == 'until' or word == 'to' or word == 'and':
                     return ['',total]
                 total = total + ' ' + word
-                if word[len(word)-1] == ',':
-                    return ['',total]
+                if word[len(word)-1] == ',' or word[len(word)-1] == ';':
+                    return ['',total[0:len(total)-1]]
                 index = index + 1
             return ['',total]
         elif step.__contains__("with"):
@@ -247,8 +235,8 @@ def ingredient_questions(question,step,curr_ingr):
                 if word == 'until' or word == 'to' or word == 'and':
                     return ['',total]
                 total = total + ' ' + word
-                if word[len(word)-1] == ',':
-                    return ['',total]
+                if word[len(word)-1] == ',' or word[len(word)-1] == ';':
+                    return ['',total[0:len(total)-1]]
                 index = index + 1
             return ['',total]
         elif step.__contains__("in a"):
@@ -256,11 +244,11 @@ def ingredient_questions(question,step,curr_ingr):
             total = 'You should use'
             while index < len(step.split()):
                 word = step.split()[index]
-                if word == 'until' or word == 'of' or word == 'and':
+                if word == 'until' or word == 'of' or word == 'and' or word == 'over':
                     return ['',total]
                 total = total + ' ' + word
-                if word[len(word)-1] == ',':
-                    return ['',total]
+                if word[len(word)-1] == ',' or word[len(word)-1] == ';':
+                    return ['',total[0:len(total)-1]]
                 index = index + 1
             return ['',total]
         elif step.__contains__("to a"):
@@ -268,11 +256,11 @@ def ingredient_questions(question,step,curr_ingr):
             total = 'You should use'
             while index < len(step.split()):
                 word = step.split()[index]
-                if word == 'until' or word == 'of' or word == 'and':
+                if word == 'until' or word == 'of' or word == 'and' or word == 'over':
                     return ['',total]
                 total = total + ' ' + word
-                if word[len(word)-1] == ',':
-                    return ['',total]
+                if word[len(word)-1] == ',' or word[len(word)-1] == ';':
+                    return ['',total[0:len(total)-1]]
                 index = index + 1
             return ['',total]
         return ['',"There are no tools used in this step"]
@@ -292,13 +280,13 @@ def ingredient_questions(question,step,curr_ingr):
                 else:
                     stri = ' '.join(step[index-1:index+1])
                     return ['',stri]
-            stri = ' '.join(step[index-1:index+1])
+            stri = 'You should cook it on ' + ' '.join(step[index-1:index+1])
             return ['',stri]
         for word in step.split():
             try:
                 f = float(word)
                 if int(word) > 50:
-                    stri = word + ' degrees ' + unit
+                    stri = 'It should be at ' + word + ' degrees ' + unit
                     return ['',stri]
             except:
                 continue
@@ -312,7 +300,7 @@ def ingredient_questions(question,step,curr_ingr):
                 word = step.split()[index]
                 time = time + ' ' + word
                 index = index + 1
-                if word[len(word)-1] == ',':
+                if word[len(word)-1] == ',' or word[len(word)-1] == ';':
                     return ['',time[0:len(time)-1]]
                 if word.__contains__('hour'):
                     if not step.__contains__('min'):
@@ -427,7 +415,7 @@ def ingredient_questions(question,step,curr_ingr):
             time = step.split()[index-1] + ' or ' + time
         elif step.split()[index] == 'to':
             time = step.split()[index-1] + ' to ' + time
-        return ['',time]  
+        return ['','For ' + time]  
     if quant:
         split_q = question.split()
         if kw == "how many":
@@ -526,6 +514,9 @@ def ingredient_questions(question,step,curr_ingr):
                     curr_ingr = ingredient
                     stri = "You need " + lst[0] + t1 + lst[1] + t2 + ingredient
                     return [curr_ingr,stri]
+        if not question.split().__contains__('it'):
+            stri = "This recipe doesn't contain that ingredient"
+            return ['',stri]
         if curr_ingr == '':
             stri = "Please specify the ingredient"
             return ['',stri]
@@ -579,6 +570,9 @@ def ingredient_questions(question,step,curr_ingr):
                         curr_ingr = ingredient
                         stri = 'The ' + ingredient + ' should be ' + verbs
                         return [curr_ingr,stri]
+        if not question.split().__contains__('it'):
+            stri = "This recipe doesn't contain that ingredient"
+            return ['',stri]
         if curr_ingr == '':
             stri = "Please specify the ingredient"
             return ['',stri]
@@ -736,7 +730,7 @@ while(True):
                     myUrl = myUrl + "+"
             print("This may help you!")
             print(myUrl)
-        if "what do i" in inpt.lower():
+        if "what do i" in inpt.lower() or "what should i" in inpt.lower():
             tagged = nlp(inpt.lower())
             curdir = steps[stepI]
             taggeddir = nlp(curdir)
